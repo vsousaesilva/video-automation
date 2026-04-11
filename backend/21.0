@@ -1,0 +1,13 @@
+Collecting python-telegram-bot
+  Downloading python_telegram_bot-22.7-py3-none-any.whl.metadata (17 kB)
+Requirement already satisfied: httpx<0.29,>=0.27 in c:\users\vsousaesilva\onedrive - justica federal no ceara\área de trabalho\claude jf\video-automation\backend\venv\lib\site-packages (from python-telegram-bot) (0.28.1)
+Requirement already satisfied: anyio in c:\users\vsousaesilva\onedrive - justica federal no ceara\área de trabalho\claude jf\video-automation\backend\venv\lib\site-packages (from httpx<0.29,>=0.27->python-telegram-bot) (4.13.0)
+Requirement already satisfied: certifi in c:\users\vsousaesilva\onedrive - justica federal no ceara\área de trabalho\claude jf\video-automation\backend\venv\lib\site-packages (from httpx<0.29,>=0.27->python-telegram-bot) (2026.2.25)
+Requirement already satisfied: httpcore==1.* in c:\users\vsousaesilva\onedrive - justica federal no ceara\área de trabalho\claude jf\video-automation\backend\venv\lib\site-packages (from httpx<0.29,>=0.27->python-telegram-bot) (1.0.9)
+Requirement already satisfied: idna in c:\users\vsousaesilva\onedrive - justica federal no ceara\área de trabalho\claude jf\video-automation\backend\venv\lib\site-packages (from httpx<0.29,>=0.27->python-telegram-bot) (3.11)
+Requirement already satisfied: h11>=0.16 in c:\users\vsousaesilva\onedrive - justica federal no ceara\área de trabalho\claude jf\video-automation\backend\venv\lib\site-packages (from httpcore==1.*->httpx<0.29,>=0.27->python-telegram-bot) (0.16.0)
+Requirement already satisfied: typing_extensions>=4.5 in c:\users\vsousaesilva\onedrive - justica federal no ceara\área de trabalho\claude jf\video-automation\backend\venv\lib\site-packages (from anyio->httpx<0.29,>=0.27->python-telegram-bot) (4.15.0)
+Downloading python_telegram_bot-22.7-py3-none-any.whl (745 kB)
+   ---------------------------------------- 745.4/745.4 kB 7.7 MB/s eta 0:00:00
+Installing collected packages: python-telegram-bot
+Successfully installed python-telegram-bot-22.7
