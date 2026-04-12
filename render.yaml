@@ -44,6 +44,8 @@ services:
         sync: false
       - key: SECRET_KEY
         sync: false
+      - key: REDIS_URL
+        sync: false  # Upstash Redis (externo, free tier)
       - key: ENVIRONMENT
         value: production
       - key: BASE_URL
@@ -51,6 +53,58 @@ services:
           name: video-automation-api
           type: web
           property: host
+
+  # --- Celery Worker (Video) ---
+  # Render free tier não tem Background Worker.
+  # Usar plano starter ($7/mês) ou rodar worker na mesma instância da API.
+  # Por enquanto, desabilitado — fallback asyncio ativo.
+  # Descomentar quando escalar:
+  #
+  # - type: worker
+  #   name: usina-celery-video
+  #   runtime: python
+  #   region: oregon
+  #   plan: starter
+  #   rootDir: backend
+  #   buildCommand: pip install -r requirements.txt
+  #   startCommand: celery -A core.tasks.celery_app worker --loglevel=info --queues=video,default --concurrency=2
+  #   envVars:
+  #     - key: PYTHON_VERSION
+  #       value: "3.11.11"
+  #     - key: REDIS_URL
+  #       sync: false
+  #     - key: SUPABASE_URL
+  #       sync: false
+  #     - key: SUPABASE_KEY
+  #       sync: false
+  #     - key: SUPABASE_SERVICE_KEY
+  #       sync: false
+  #     - key: GEMINI_API_KEY
+  #       sync: false
+  #     - key: PEXELS_API_KEY
+  #       sync: false
+  #     - key: YOUTUBE_CLIENT_ID
+  #       sync: false
+  #     - key: YOUTUBE_CLIENT_SECRET
+  #       sync: false
+  #     - key: YOUTUBE_REFRESH_TOKEN
+  #       sync: false
+  #     - key: META_APP_ID
+  #       sync: false
+  #     - key: META_APP_SECRET
+  #       sync: false
+  #     - key: META_ACCESS_TOKEN
+  #       sync: false
+  #     - key: META_INSTAGRAM_ACCOUNT_ID
+  #       sync: false
+  #     - key: TELEGRAM_BOT_TOKEN
+  #       sync: false
+  #     - key: RESEND_API_KEY
+  #       sync: false
+  #     - key: SECRET_KEY
+  #       sync: false
+  #     - key: ENVIRONMENT
+  #       value: production
 
   # --- Frontend (React Static Site) ---
   # Serviço ativo no Render: "video-automation-app" (criado manualmente)

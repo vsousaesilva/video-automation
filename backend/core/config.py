@@ -37,6 +37,9 @@ class Settings(BaseSettings):
     asaas_base_url: str = "https://sandbox.asaas.com/api/v3"  # sandbox; prod: https://api.asaas.com/v3
     asaas_webhook_token: str = ""
 
+    # Redis / Celery
+    redis_url: str = "redis://localhost:6379/0"
+
     # App
     frontend_url: str = "http://localhost:5173"
     secret_key: str = "insecure-dev-key-change-me"

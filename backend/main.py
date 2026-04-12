@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from core.config import get_settings
-from routers import auth, workspaces, users, billing
+from routers import auth, workspaces, users, billing, tasks
 from modules.video_engine.routers import (
     negocios,
     media,
@@ -60,6 +60,7 @@ app.include_router(videos.router)
 app.include_router(telegram_webhook.router)
 app.include_router(publish.router)
 app.include_router(approvals.router)
+app.include_router(tasks.router)
 
 
 @app.get("/health")

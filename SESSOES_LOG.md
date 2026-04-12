@@ -115,3 +115,60 @@
   - Testar fluxo completo: signup -> login -> onboarding -> billing
   - Remover arquivo legado Apps.jsx quando confirmado
 - **Proxima sessao:** Sessao 3 — Fila de Processamento (Redis + Celery)
+
+---
+
+## Sessao 3 — Fila de Processamento (Redis + Celery)
+- **Data:** 2026-04-12
+- **Status:** Concluida
+- **O que foi feito:**
+
+  **Infraestrutura (render.yaml):**
+  - Adicionado serviço Redis (`usina-redis`, plano starter $7/mês)
+  - Adicionado Celery worker (`usina-celery-video`, plano starter $7/mês) — consome filas `video` e `default`
+  - Adicionado Flower dashboard (`usina-flower`, plano free) — monitoramento de tasks com basic auth
+  - `REDIS_URL` injetada via `fromService` nos serviços API, worker e Flower
+
+  **Backend — Celery Core:**
+  - `core/config.py` — adicionado `redis_url` (default `redis://localhost:6379/0`)
+  - `core/tasks.py` — configuração do Celery app (`usina_do_tempo`): broker/backend Redis, task_acks_late, worker_prefetch_multiplier=1, task_reject_on_worker_lost, rotas de filas por módulo, autodiscover de tasks
+  - `requirements.txt` — adicionados `celery[redis]>=5.4.0`, `redis>=5.0.0`, `flower>=2.0.0`
+
+  **Backend — Tasks do Video Engine:**
+  - `modules/video_engine/tasks.py` — 3 tasks Celery:
+    - `process_negocio_task` — processa 1 negócio (retry 3x, backoff exponencial, jitter)
+    - `publish_all_platforms_task` — publica vídeo em todas plataformas (retry 3x, backoff)
+    - `process_all_negocios_task` — fan-out: enfileira cada negócio como task individual
+
+  **Backend — Migração de Jobs:**
+  - `modules/video_engine/routers/pipeline.py`:
+    - Removido `BackgroundTasks` do endpoint `/trigger`
+    - Adicionada função `_celery_available()` que verifica conectividade com Redis
+    - Endpoint agora usa `process_negocio_task.delay()` com fallback para `asyncio.create_task` se Redis indisponível
+  - `modules/video_engine/routers/telegram_webhook.py`:
+    - `_handle_aprovar()` — publicação via `publish_all_platforms_task.delay()` com fallback asyncio
+    - `_handle_regenerar()` — regeneração via `process_negocio_task.delay()` com fallback asyncio
+
+  **Backend — Endpoint de Status:**
+  - `routers/tasks.py` — novo router:
+    - `GET /tasks/status/{task_id}` — consulta status de tarefa Celery (PENDING, STARTED, SUCCESS, FAILURE, RETRY, REVOKED)
+    - `POST /tasks/revoke/{task_id}` — cancela tarefa pendente/em execução
+  - `main.py` — registrado `tasks.router`
+
+- **Decisoes tomadas:**
+  - Celery workers síncronos — funções async executadas via `asyncio.run()` dentro das tasks
+  - Fallback para asyncio quando Redis indisponível (resilência em dev e durante deploys)
+  - Fan-out: trigger enfileira cada negócio como task individual (retry independente por negócio)
+  - `task_acks_late=True` + `task_reject_on_worker_lost=True` — tasks sobrevivem a crash do worker
+  - Backoff exponencial com jitter para evitar thundering herd em retries
+  - Filas separadas: `video` para tasks pesadas, `default` para o resto
+  - Flower com basic auth para monitoramento em produção
+
+- **Pendencias:**
+  - Criar serviço Redis no Render e configurar `REDIS_URL`
+  - Configurar `FLOWER_USER` e `FLOWER_PASSWORD` no Render
+  - Testar fluxo completo: trigger → Celery → worker → banco
+  - Testar retry: simular falha e verificar reprocessamento
+  - Testar fallback: parar Redis e verificar que asyncio assume
+
+- **Proxima sessao:** Sessao 4 — Segurança, Auditoria e Hardening

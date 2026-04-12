@@ -2,7 +2,7 @@ import asyncio
 import logging
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, BackgroundTasks
+from fastapi import APIRouter
 
 from core.db import get_supabase
 from modules.video_engine.schemas import PipelineTriggerRequest, PipelineTriggerResponse
@@ -22,6 +22,18 @@ from modules.video_engine.services.telegram_bot import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/pipeline", tags=["Pipeline"])
+
+
+def _celery_available() -> bool:
+    """Verifica se o broker Redis está acessível."""
+    try:
+        from core.tasks import celery_app
+        conn = celery_app.connection()
+        conn.ensure_connection(max_retries=1, timeout=2)
+        conn.close()
+        return True
+    except Exception:
+        return False
 
 
 def get_negocios_for_hour(hora: int) -> list[dict]:
@@ -198,13 +210,11 @@ async def _process_all_negocios(negocios: list[dict]):
 
 
 @router.post("/trigger", response_model=PipelineTriggerResponse)
-async def trigger_pipeline(
-    body: PipelineTriggerRequest,
-    background_tasks: BackgroundTasks,
-):
+async def trigger_pipeline(body: PipelineTriggerRequest):
     """
     Endpoint que recebe webhook do pg_cron.
-    Valida hora, busca negócios elegíveis, inicia processamento em background.
+    Valida hora, busca negócios elegíveis, enfileira no Celery.
+    Fallback: asyncio se Redis indisponível.
     """
     hora = body.hora_atual
 
@@ -234,6 +244,27 @@ async def trigger_pipeline(
         mensagem=f"Negócios elegíveis para hora={hora}: {', '.join(nomes)}",
     )
 
-    background_tasks.add_task(_process_all_negocios, negocios)
+    # Tentar enfileirar via Celery; fallback para asyncio
+    if _celery_available():
+        from modules.video_engine.tasks import process_negocio_task
+        task_ids = []
+        for negocio in negocios:
+            result = process_negocio_task.delay(negocio)
+            task_ids.append(result.id)
+        _log_etapa(
+            app_id=None,
+            etapa="trigger_celery",
+            status="info",
+            mensagem=f"Enfileirados {len(task_ids)} negócios via Celery",
+        )
+    else:
+        logger.warning("Redis indisponível — fallback para asyncio")
+        _log_etapa(
+            app_id=None,
+            etapa="trigger_fallback",
+            status="aviso",
+            mensagem="Redis indisponível. Processando via asyncio (sem retry/persistência)",
+        )
+        asyncio.create_task(_process_all_negocios(negocios))
 
     return PipelineTriggerResponse(status="processing", negocios_triggered=nomes)

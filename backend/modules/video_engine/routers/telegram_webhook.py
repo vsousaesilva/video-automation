@@ -103,14 +103,21 @@ async def _handle_aprovar(video: dict, user: dict, app: dict = None, workspace: 
     _log_etapa(video["negocio_id"], video["id"], "aprovacao_telegram", "sucesso",
                f"Vídeo aprovado via Telegram por {user['nome']}")
 
-    # Disparar publicação orquestrada em todas as plataformas ativas
+    # Disparar publicação orquestrada via Celery (fallback asyncio)
     if app and workspace:
         try:
-            from modules.video_engine.services.publisher_orchestrator import publish_all_platforms
-            import asyncio
-            asyncio.create_task(publish_all_platforms(video["id"]))
-            _log_etapa(video["negocio_id"], video["id"], "orquestrador_auto_trigger", "info",
-                       "Publicação orquestrada disparada automaticamente após aprovação via Telegram")
+            from modules.video_engine.routers.pipeline import _celery_available
+            if _celery_available():
+                from modules.video_engine.tasks import publish_all_platforms_task
+                publish_all_platforms_task.delay(video["id"])
+                _log_etapa(video["negocio_id"], video["id"], "orquestrador_auto_trigger", "info",
+                           "Publicação enfileirada via Celery após aprovação Telegram")
+            else:
+                from modules.video_engine.services.publisher_orchestrator import publish_all_platforms
+                import asyncio
+                asyncio.create_task(publish_all_platforms(video["id"]))
+                _log_etapa(video["negocio_id"], video["id"], "orquestrador_auto_trigger", "aviso",
+                           "Publicação disparada via asyncio (Redis indisponível)")
         except Exception as e:
             logger.error(f"Erro ao disparar publicação orquestrada: {e}")
 
@@ -157,12 +164,18 @@ async def _handle_regenerar(video: dict, app: dict, user: dict) -> dict:
     _log_etapa(video["negocio_id"], video["id"], "regeneracao_telegram", "sucesso",
                f"Regeneração solicitada via Telegram por {user['nome']}")
 
-    # Disparar novo pipeline em background
+    # Disparar novo pipeline via Celery (fallback asyncio)
     try:
-        from modules.video_engine.routers.pipeline import _process_negocio
-        import asyncio
-        asyncio.create_task(_process_negocio(app))
-        logger.info(f"Pipeline reiniciado para app {app['nome']} por solicitação Telegram")
+        from modules.video_engine.routers.pipeline import _celery_available
+        if _celery_available():
+            from modules.video_engine.tasks import process_negocio_task
+            process_negocio_task.delay(app)
+            logger.info(f"Pipeline re-enfileirado via Celery para {app['nome']}")
+        else:
+            from modules.video_engine.routers.pipeline import _process_negocio
+            import asyncio
+            asyncio.create_task(_process_negocio(app))
+            logger.info(f"Pipeline reiniciado via asyncio para {app['nome']} (Redis indisponível)")
     except Exception as e:
         logger.error(f"Erro ao reiniciar pipeline: {e}")
 
