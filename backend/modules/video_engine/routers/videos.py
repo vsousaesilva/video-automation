@@ -20,7 +20,7 @@ router = APIRouter(prefix="/videos", tags=["Vídeos"])
 
 @router.get("/pending", response_model=list[VideoResponse])
 async def list_pending_videos(
-    app_id: Optional[str] = Query(None, description="Filtrar por app"),
+    negocio_id: Optional[str] = Query(None, description="Filtrar por negócio"),
     current_user: dict = Depends(get_current_user),
 ):
     """Lista vídeos aguardando aprovação do workspace do usuário."""
@@ -30,21 +30,21 @@ async def list_pending_videos(
     # Buscar apps do workspace para filtrar vídeos
     query = (
         supabase.table("videos")
-        .select("*, apps!inner(workspace_id)")
+        .select("*, negocios!inner(workspace_id)")
         .eq("status", "aguardando_aprovacao")
-        .eq("apps.workspace_id", workspace_id)
+        .eq("negocios.workspace_id", workspace_id)
         .order("criado_em", desc=True)
     )
 
-    if app_id:
-        query = query.eq("app_id", app_id)
+    if negocio_id:
+        query = query.eq("negocio_id", negocio_id)
 
     result = query.execute()
 
     # Remover dados do join aninhado antes de retornar
     videos = []
     for row in result.data:
-        row.pop("apps", None)
+        row.pop("negocios", None)
         videos.append(row)
 
     return videos
@@ -74,9 +74,9 @@ async def get_video_detail(
 
     # Verificar se o vídeo pertence ao workspace do usuário
     app_result = (
-        supabase.table("apps")
+        supabase.table("negocios")
         .select("nome, workspace_id")
-        .eq("id", video["app_id"])
+        .eq("id", video["negocio_id"])
         .execute()
     )
 
@@ -99,7 +99,7 @@ async def get_video_detail(
 
     return VideoDetailResponse(
         **video,
-        app_nome=app_data["nome"],
+        negocio_nome=app_data["nome"],
         conteudo=conteudo,
     )
 
@@ -129,7 +129,7 @@ async def retry_publish(
     video = video_result.data[0]
 
     # Verificar pertencimento ao workspace
-    app_result = supabase.table("apps").select("workspace_id").eq("id", video["app_id"]).execute()
+    app_result = supabase.table("negocios").select("workspace_id").eq("id", video["negocio_id"]).execute()
     if not app_result.data or app_result.data[0]["workspace_id"] != workspace_id:
         raise HTTPException(status_code=404, detail="Video nao encontrado")
 
@@ -153,7 +153,7 @@ async def retry_publish(
     # Log
     try:
         supabase.table("execution_logs").insert({
-            "app_id": video["app_id"],
+            "negocio_id": video["negocio_id"],
             "video_id": video_id,
             "etapa": "retry_publicacao",
             "status": "info",

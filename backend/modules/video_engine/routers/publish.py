@@ -31,9 +31,9 @@ def _get_video_context(video_id: str, workspace_id: str) -> tuple[dict, dict, di
         raise HTTPException(status_code=404, detail="Video nao encontrado")
     video = video_result.data[0]
 
-    app_result = supabase.table("apps").select("*").eq("id", video["app_id"]).execute()
+    app_result = supabase.table("negocios").select("*").eq("id", video["negocio_id"]).execute()
     if not app_result.data:
-        raise HTTPException(status_code=404, detail="App nao encontrado")
+        raise HTTPException(status_code=404, detail="Negócio não encontrado")
     app = app_result.data[0]
 
     if app["workspace_id"] != workspace_id:
@@ -72,7 +72,7 @@ async def _publish_youtube_task(video_id: str, workspace_id: str) -> None:
             return
         video = video_result.data[0]
 
-        app_result = supabase.table("apps").select("*").eq("id", video["app_id"]).execute()
+        app_result = supabase.table("negocios").select("*").eq("id", video["negocio_id"]).execute()
         if not app_result.data:
             return
         app = app_result.data[0]
@@ -123,7 +123,7 @@ async def _publish_youtube_task(video_id: str, workspace_id: str) -> None:
         # Notificar erro
         try:
             supabase = get_supabase()
-            app_result = supabase.table("apps").select("*").eq("id", video.get("app_id", "")).execute()
+            app_result = supabase.table("negocios").select("*").eq("id", video.get("app_id", "")).execute()
             app = app_result.data[0] if app_result.data else {}
 
             admins_result = (
@@ -249,7 +249,7 @@ async def _publish_instagram_task(video_id: str, workspace_id: str) -> None:
             return
         video = video_result.data[0]
 
-        app_result = supabase.table("apps").select("*").eq("id", video["app_id"]).execute()
+        app_result = supabase.table("negocios").select("*").eq("id", video["negocio_id"]).execute()
         if not app_result.data:
             return
         app = app_result.data[0]
@@ -298,7 +298,7 @@ async def _publish_instagram_task(video_id: str, workspace_id: str) -> None:
 
         try:
             supabase = get_supabase()
-            app_result = supabase.table("apps").select("*").eq("id", video.get("app_id", "")).execute()
+            app_result = supabase.table("negocios").select("*").eq("id", video.get("app_id", "")).execute()
             app = app_result.data[0] if app_result.data else {}
 
             admins_result = (

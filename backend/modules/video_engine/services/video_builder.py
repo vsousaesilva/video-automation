@@ -91,7 +91,7 @@ def _log_etapa(
             "criado_em": datetime.now(timezone.utc).isoformat(),
         }
         if app_id:
-            log_data["app_id"] = app_id
+            log_data["negocio_id"] = app_id
         if video_id:
             log_data["video_id"] = video_id
         supabase.table("execution_logs").insert(log_data).execute()
@@ -1014,7 +1014,7 @@ async def build_all_formats(
 
     video_data = {
         "conteudo_id": content_id,
-        "app_id": app_id,
+        "negocio_id": app_id,
         "url_storage_vertical": output.vertical_url,
         "duracao_vertical_segundos": int(output.vertical_duration) if output.vertical_duration else None,
         "url_storage_horizontal": output.horizontal_url,

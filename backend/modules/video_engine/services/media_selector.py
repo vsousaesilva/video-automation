@@ -24,7 +24,7 @@ def _fetch_assets(query_builder) -> list[dict]:
 
 
 async def select_media_for_script(
-    app_id: str,
+    negocio_id: str,
     workspace_id: str,
     visual_keywords: list[str],
     min_count: int = 3,
@@ -38,7 +38,7 @@ async def select_media_for_script(
       3. Pexels API (fallback final, com download local)
 
     Args:
-        app_id: ID do aplicativo
+        negocio_id: ID do negócio
         workspace_id: ID do workspace
         visual_keywords: palavras-chave para busca de midia
         min_count: minimo de midias a retornar (padrao 3)
@@ -52,7 +52,7 @@ async def select_media_for_script(
     selected: list[str] = []
 
     logger.info(
-        f"Selecionando midia para app={app_id}, "
+        f"Selecionando midia para negocio={negocio_id}, "
         f"keywords={visual_keywords}, min={min_count}"
     )
 
@@ -60,7 +60,7 @@ async def select_media_for_script(
     app_assets = _fetch_assets(
         supabase.table("media_assets")
         .select("url_storage, tags")
-        .eq("app_id", app_id)
+        .eq("negocio_id", negocio_id)
     )
 
     scored = [
@@ -74,7 +74,7 @@ async def select_media_for_script(
             break
         selected.append(asset["url_storage"])
 
-    logger.info(f"Banco do app: {len(selected)} midias encontradas")
+    logger.info(f"Banco do negócio: {len(selected)} midias encontradas")
 
     # 2. Se ainda falta, buscar assets globais do workspace
     if len(selected) < min_count:
@@ -82,7 +82,7 @@ async def select_media_for_script(
             supabase.table("media_assets")
             .select("url_storage, tags")
             .eq("workspace_id", workspace_id)
-            .is_("app_id", "null")
+            .is_("negocio_id", "null")
         )
 
         scored_ws = [

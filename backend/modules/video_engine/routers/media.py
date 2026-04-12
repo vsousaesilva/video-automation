@@ -20,25 +20,25 @@ router = APIRouter(prefix="/media", tags=["Banco de Imagens"])
 @router.post("/upload", response_model=MediaUploadResponse, status_code=201)
 async def upload_media(
     file: UploadFile = File(...),
-    app_id: Optional[str] = Form(None),
+    negocio_id: Optional[str] = Form(None),
     tags: Optional[str] = Form(None, description='JSON array de tags, ex: ["produto","screenshot"]'),
     current_user: dict = Depends(require_role(["admin", "editor"])),
 ):
-    """Upload de arquivo de midia (imagem ou video) para o banco do app ou workspace."""
+    """Upload de arquivo de mídia (imagem ou vídeo) para o banco do negócio ou workspace."""
     workspace_id = current_user["workspace_id"]
     supabase = get_supabase()
 
     # Validar que o app pertence ao workspace (se informado)
-    if app_id:
+    if negocio_id:
         app_result = (
-            supabase.table("apps")
+            supabase.table("negocios")
             .select("id")
-            .eq("id", app_id)
+            .eq("id", negocio_id)
             .eq("workspace_id", workspace_id)
             .execute()
         )
         if not app_result.data:
-            raise HTTPException(status_code=404, detail="App nao encontrado neste workspace")
+            raise HTTPException(status_code=404, detail="Negócio não encontrado neste workspace")
 
     # Ler conteudo do arquivo
     file_bytes = await file.read()
@@ -52,7 +52,7 @@ async def upload_media(
         raise HTTPException(status_code=422, detail=str(e))
 
     # Upload para o Storage
-    storage_path = build_storage_path(workspace_id, app_id, file.filename or "unnamed")
+    storage_path = build_storage_path(workspace_id, negocio_id, file.filename or "unnamed")
 
     try:
         public_url = await upload_to_storage(file_bytes, storage_path, content_type)
@@ -73,7 +73,7 @@ async def upload_media(
     # Inserir registro no banco
     asset_data = {
         "workspace_id": workspace_id,
-        "app_id": app_id,
+        "negocio_id": negocio_id,
         "nome": file.filename or "unnamed",
         "url_storage": public_url,
         "tipo": tipo,
@@ -88,7 +88,7 @@ async def upload_media(
 
 @router.get("", response_model=list[MediaUploadResponse])
 async def list_media(
-    app_id: Optional[str] = Query(None, description="Filtrar por app"),
+    negocio_id: Optional[str] = Query(None, description="Filtrar por negócio"),
     tipo: Optional[str] = Query(None, description="Filtrar por tipo: imagem ou video"),
     tag: Optional[str] = Query(None, description="Filtrar por tag (contem)"),
     apenas_workspace: bool = Query(False, description="Apenas assets globais do workspace"),
@@ -106,9 +106,9 @@ async def list_media(
     )
 
     if apenas_workspace:
-        query = query.is_("app_id", "null")
-    elif app_id:
-        query = query.eq("app_id", app_id)
+        query = query.is_("negocio_id", "null")
+    elif negocio_id:
+        query = query.eq("negocio_id", negocio_id)
 
     if tipo:
         query = query.eq("tipo", tipo)
@@ -120,30 +120,29 @@ async def list_media(
     return result.data
 
 
-@router.get("/app/{app_id}", response_model=list[MediaUploadResponse])
-async def list_app_media(
-    app_id: str,
+@router.get("/negocio/{negocio_id}", response_model=list[MediaUploadResponse])
+async def list_negocio_media(
+    negocio_id: str,
     current_user: dict = Depends(get_current_user),
 ):
-    """Assets do app especifico."""
+    """Assets do negócio especifico."""
     supabase = get_supabase()
     workspace_id = current_user["workspace_id"]
 
-    # Verificar que o app pertence ao workspace
-    app_result = (
-        supabase.table("apps")
+    neg_result = (
+        supabase.table("negocios")
         .select("id")
-        .eq("id", app_id)
+        .eq("id", negocio_id)
         .eq("workspace_id", workspace_id)
         .execute()
     )
-    if not app_result.data:
-        raise HTTPException(status_code=404, detail="App nao encontrado neste workspace")
+    if not neg_result.data:
+        raise HTTPException(status_code=404, detail="Negócio não encontrado neste workspace")
 
     result = (
         supabase.table("media_assets")
         .select("*")
-        .eq("app_id", app_id)
+        .eq("negocio_id", negocio_id)
         .eq("ativo", True)
         .order("criado_em", desc=True)
         .execute()
@@ -223,7 +222,7 @@ async def delete_media(
 
 @router.post("/select")
 async def select_media(
-    app_id: str = Query(...),
+    negocio_id: str = Query(...),
     visual_keywords: str = Query(..., description='Keywords separadas por virgula'),
     min_count: int = Query(3, ge=1, le=20),
     current_user: dict = Depends(get_current_user),
@@ -236,7 +235,7 @@ async def select_media(
         raise HTTPException(status_code=422, detail="Informe ao menos uma keyword")
 
     urls = await select_media_for_script(
-        app_id=app_id,
+        negocio_id=negocio_id,
         workspace_id=workspace_id,
         visual_keywords=keywords,
         min_count=min_count,

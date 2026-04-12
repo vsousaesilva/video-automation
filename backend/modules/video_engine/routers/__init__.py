@@ -4,7 +4,7 @@ Reexporta todos os routers para facilitar o registro no main.py.
 """
 
 from modules.video_engine.routers import (
-    apps,
+    negocios,
     media,
     pipeline,
     conteudos,
@@ -15,7 +15,7 @@ from modules.video_engine.routers import (
 )
 
 all_routers = [
-    apps.router,
+    negocios.router,
     media.router,
     pipeline.router,
     conteudos.router,

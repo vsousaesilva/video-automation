@@ -5,9 +5,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from core.config import get_settings
-from routers import auth, workspaces, users
+from routers import auth, workspaces, users, billing
 from modules.video_engine.routers import (
-    apps,
+    negocios,
     media,
     pipeline,
     conteudos,
@@ -34,8 +34,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Video Automation Platform",
-    description="Plataforma de automação de vídeos para marketing de aplicativos mobile",
+    title="Usina do Tempo",
+    description="Plataforma SaaS de automação de vídeos para marketing digital",
     version="0.1.0",
     lifespan=lifespan,
 )
@@ -51,7 +51,8 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(workspaces.router)
 app.include_router(users.router)
-app.include_router(apps.router)
+app.include_router(billing.router)
+app.include_router(negocios.router)
 app.include_router(media.router)
 app.include_router(pipeline.router)
 app.include_router(conteudos.router)

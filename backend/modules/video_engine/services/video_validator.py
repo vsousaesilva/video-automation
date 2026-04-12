@@ -168,7 +168,7 @@ def _log_etapa(app_id: str | None, video_id: str | None, etapa: str, status: str
     try:
         supabase = get_supabase()
         supabase.table("execution_logs").insert({
-            "app_id": app_id,
+            "negocio_id": app_id,
             "video_id": video_id,
             "etapa": etapa,
             "status": status,

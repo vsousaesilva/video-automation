@@ -4,7 +4,7 @@ import api from '../lib/api'
 
 const TAG_SUGGESTIONS = ['produto', 'screenshot', 'lifestyle', 'resultado', 'icone', 'banner', 'marketing', 'tutorial']
 
-export default function MediaUploader({ appId }) {
+export default function MediaUploader({ negocioId }) {
   const [assets, setAssets] = useState([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
@@ -14,12 +14,12 @@ export default function MediaUploader({ appId }) {
 
   const fetchAssets = useCallback(() => {
     setLoading(true)
-    const url = appId ? `/media/app/${appId}` : '/media?apenas_workspace=true'
+    const url = negocioId ? `/media/negocio/${negocioId}` : '/media?apenas_workspace=true'
     api.get(url).then(res => {
       setAssets(res.data)
       setLoading(false)
     }).catch(() => setLoading(false))
-  }, [appId])
+  }, [negocioId])
 
   useEffect(() => { fetchAssets() }, [fetchAssets])
 
@@ -30,7 +30,7 @@ export default function MediaUploader({ appId }) {
 
       const formData = new FormData()
       formData.append('file', file)
-      if (appId) formData.append('app_id', appId)
+      if (negocioId) formData.append('negocio_id', negocioId)
       if (selectedTags.length) formData.append('tags', JSON.stringify(selectedTags))
 
       try {
@@ -48,7 +48,7 @@ export default function MediaUploader({ appId }) {
         setUploadProgress(0)
       }
     }
-  }, [appId, selectedTags, fetchAssets])
+  }, [negocioId, selectedTags, fetchAssets])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import useAuthStore from '../stores/authStore'
 
 export default function Login() {
@@ -26,7 +26,7 @@ export default function Login() {
               <rect x="1" y="5" width="15" height="14" rx="2" ry="2" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-white">Video Automation</h1>
+          <h1 className="text-2xl font-bold text-white">Usina do Tempo</h1>
           <p className="text-gray-400 mt-2">Acesse sua plataforma de marketing</p>
         </div>
 
@@ -76,6 +76,15 @@ export default function Login() {
           >
             {loading ? 'Entrando...' : 'Entrar'}
           </button>
+
+          <div className="flex items-center justify-between mt-4">
+            <Link to="/forgot-password" className="text-sm text-indigo-400 hover:text-indigo-300">
+              Esqueceu a senha?
+            </Link>
+            <Link to="/signup" className="text-sm text-indigo-400 hover:text-indigo-300">
+              Criar conta
+            </Link>
+          </div>
         </form>
       </div>
     </div>

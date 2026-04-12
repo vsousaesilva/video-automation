@@ -42,7 +42,7 @@ export default function Settings() {
       {tab === 'account' && <AccountSettings />}
       {tab === 'workspace' && <WorkspaceSettings isAdmin={isAdmin} />}
       {tab === 'users' && <UsersSettings isAdmin={isAdmin} />}
-      {tab === 'media' && <MediaUploader appId={null} />}
+      {tab === 'media' && <MediaUploader negocioId={null} />}
     </div>
   )
 }

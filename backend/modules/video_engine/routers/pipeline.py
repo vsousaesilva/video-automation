@@ -24,12 +24,12 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/pipeline", tags=["Pipeline"])
 
 
-def get_apps_for_hour(hora: int) -> list[dict]:
-    """Busca apps ativos elegíveis para o horário informado."""
+def get_negocios_for_hour(hora: int) -> list[dict]:
+    """Busca negócios ativos elegíveis para o horário informado."""
     supabase = get_supabase()
 
     result = (
-        supabase.table("apps")
+        supabase.table("negocios")
         .select("*")
         .eq("status", "ativo")
         .eq("horario_disparo", hora)
@@ -39,24 +39,24 @@ def get_apps_for_hour(hora: int) -> list[dict]:
     hoje = datetime.now(timezone.utc).weekday()
     dia_semana_hoje = (hoje + 1) % 7  # Converter: Python seg=0 -> nosso 1, dom=6 -> nosso 0
 
-    apps_elegiveis = []
+    negocios_elegiveis = []
     for app in result.data:
         # Verificar frequência e dias da semana
         if app.get("frequencia") != "diaria" and app.get("dias_semana"):
             if dia_semana_hoje not in app["dias_semana"]:
                 continue
-        apps_elegiveis.append(app)
+        negocios_elegiveis.append(app)
 
-    return apps_elegiveis
+    return negocios_elegiveis
 
 
-def _get_last_7_types(app_id: str) -> list[str]:
-    """Busca os últimos 7 tipos de conteúdo gerados para o app."""
+def _get_last_7_types(negocio_id: str) -> list[str]:
+    """Busca os últimos 7 tipos de conteúdo gerados para o negócio."""
     supabase = get_supabase()
     result = (
         supabase.table("conteudos")
         .select("tipo_conteudo")
-        .eq("app_id", app_id)
+        .eq("negocio_id", negocio_id)
         .order("criado_em", desc=True)
         .limit(7)
         .execute()
@@ -64,15 +64,15 @@ def _get_last_7_types(app_id: str) -> list[str]:
     return [r["tipo_conteudo"] for r in result.data if r.get("tipo_conteudo")]
 
 
-def _check_duplicate(app_id: str) -> bool:
-    """Verifica se já existe conteúdo gerado hoje para o app (idempotência)."""
+def _check_duplicate(negocio_id: str) -> bool:
+    """Verifica se já existe conteúdo gerado hoje para o negócio (idempotência)."""
     supabase = get_supabase()
     hoje = datetime.now(timezone.utc).date().isoformat()
 
     result = (
         supabase.table("conteudos")
         .select("id")
-        .eq("app_id", app_id)
+        .eq("negocio_id", negocio_id)
         .neq("status", "erro")
         .gte("criado_em", f"{hoje}T00:00:00+00:00")
         .lte("criado_em", f"{hoje}T23:59:59+00:00")
@@ -81,50 +81,49 @@ def _check_duplicate(app_id: str) -> bool:
     return len(result.data) > 0
 
 
-async def _process_app(app: dict):
-    """Processa um app: gera conteúdo via Gemini e salva no banco."""
-    app_id = app["id"]
-    app_nome = app["nome"]
+async def _process_negocio(negocio: dict):
+    """Processa um negócio: gera conteúdo via Gemini e salva no banco."""
+    negocio_id = negocio["id"]
+    negocio_nome = negocio["nome"]
 
     try:
-        _log_etapa(app_id, "pipeline_inicio", "info",
-                   f"Iniciando pipeline para app '{app_nome}'")
+        _log_etapa(negocio_id, "pipeline_inicio", "info",
+                   f"Iniciando pipeline para negócio '{negocio_nome}'")
 
         # Verificar idempotência
-        if _check_duplicate(app_id):
-            _log_etapa(app_id, "pipeline_duplicado", "info",
-                       f"Conteúdo já gerado hoje para '{app_nome}'. Pulando.")
+        if _check_duplicate(negocio_id):
+            _log_etapa(negocio_id, "pipeline_duplicado", "info",
+                       f"Conteúdo já gerado hoje para '{negocio_nome}'. Pulando.")
             return
 
-        # Buscar workspace do app
+        # Buscar workspace do negócio
         supabase = get_supabase()
         ws_result = (
             supabase.table("workspaces")
             .select("*")
-            .eq("id", app["workspace_id"])
+            .eq("id", negocio["workspace_id"])
             .execute()
         )
         if not ws_result.data:
-            _log_etapa(app_id, "pipeline_erro", "erro",
-                       f"Workspace {app['workspace_id']} não encontrado")
+            _log_etapa(negocio_id, "pipeline_erro", "erro",
+                       f"Workspace {negocio['workspace_id']} não encontrado")
             return
 
         workspace = ws_result.data[0]
 
         # Buscar últimos 7 tipos
-        last_7_types = _get_last_7_types(app_id)
+        last_7_types = _get_last_7_types(negocio_id)
 
         # Gerar conteúdo via Gemini
-        conteudo = await generate_content(app, workspace, last_7_types)
+        conteudo = await generate_content(negocio, workspace, last_7_types)
 
         # Salvar no banco
-        saved = await save_content(app_id, conteudo)
+        saved = await save_content(negocio_id, conteudo)
 
-        _log_etapa(app_id, "pipeline_concluido", "sucesso",
-                   f"Pipeline concluído para '{app_nome}'. Conteúdo id={saved['id']}")
+        _log_etapa(negocio_id, "pipeline_concluido", "sucesso",
+                   f"Pipeline concluído para '{negocio_nome}'. Conteúdo id={saved['id']}")
 
-        # --- Sessão 10: Validação + Notificação ---
-        # Buscar vídeo gerado associado ao conteúdo (se existir)
+        # --- Validação + Notificação ---
         video_result = (
             supabase.table("videos")
             .select("*")
@@ -136,16 +135,15 @@ async def _process_app(app: dict):
             video = video_result.data[0]
             video_id = video["id"]
 
-            _log_validacao(app_id, video_id, "validacao_inicio", "info",
+            _log_validacao(negocio_id, video_id, "validacao_inicio", "info",
                            f"Iniciando validação do vídeo {video_id}")
 
-            validation = validate_video(video, app)
+            validation = validate_video(video, negocio)
 
-            # Buscar editores e admins do workspace para notificação
             editors_result = (
                 supabase.table("users")
                 .select("*")
-                .eq("workspace_id", app["workspace_id"])
+                .eq("workspace_id", negocio["workspace_id"])
                 .eq("ativo", True)
                 .in_("papel", ["admin", "editor"])
                 .execute()
@@ -154,41 +152,37 @@ async def _process_app(app: dict):
 
             if validation.is_valid:
                 update_video_status_approved(video_id)
-                _log_validacao(app_id, video_id, "validacao_sucesso", "sucesso",
+                _log_validacao(negocio_id, video_id, "validacao_sucesso", "sucesso",
                                "Vídeo validado com sucesso")
-                notify_approval_needed(video, app, editors)
-                _log_validacao(app_id, video_id, "notificacao_aprovacao", "sucesso",
+                notify_approval_needed(video, negocio, editors)
+                _log_validacao(negocio_id, video_id, "notificacao_aprovacao", "sucesso",
                                "E-mail de aprovação enviado aos editores")
 
-                # Enviar para Telegram (se configurado)
-                telegram_ok = await telegram_send_approval(video, app, workspace)
+                telegram_ok = await telegram_send_approval(video, negocio, workspace)
                 if telegram_ok:
-                    _log_validacao(app_id, video_id, "telegram_aprovacao", "sucesso",
+                    _log_validacao(negocio_id, video_id, "telegram_aprovacao", "sucesso",
                                    "Vídeo enviado ao Telegram para aprovação")
             else:
                 update_video_status_error(video_id, validation.errors)
                 erro_str = "; ".join(validation.errors)
-                _log_validacao(app_id, video_id, "validacao_erro", "erro",
+                _log_validacao(negocio_id, video_id, "validacao_erro", "erro",
                                f"Validação falhou: {erro_str}")
-                # Notificar admins sobre o erro
                 admins = [u for u in editors if u["papel"] == "admin"]
-                notify_error(video, app, admins, erro_str)
-                _log_validacao(app_id, video_id, "notificacao_erro", "sucesso",
+                notify_error(video, negocio, admins, erro_str)
+                _log_validacao(negocio_id, video_id, "notificacao_erro", "sucesso",
                                "E-mail de erro enviado aos admins")
 
-                # Notificar erro via Telegram (se configurado)
-                await telegram_send_error(video, app, workspace, erro_str)
+                await telegram_send_error(video, negocio, workspace, erro_str)
 
     except Exception as e:
-        logger.error(f"Erro no pipeline do app {app_nome}: {e}")
-        _log_etapa(app_id, "pipeline_erro", "erro",
+        logger.error(f"Erro no pipeline do negócio {negocio_nome}: {e}")
+        _log_etapa(negocio_id, "pipeline_erro", "erro",
                    f"Erro no pipeline: {str(e)}")
 
-        # Salvar conteúdo com status erro se possível
         try:
             supabase = get_supabase()
             supabase.table("conteudos").insert({
-                "app_id": app_id,
+                "negocio_id": negocio_id,
                 "status": "erro",
                 "erro_msg": str(e),
                 "criado_em": datetime.now(timezone.utc).isoformat(),
@@ -197,9 +191,9 @@ async def _process_app(app: dict):
             pass
 
 
-async def _process_all_apps(apps: list[dict]):
-    """Processa todos os apps elegíveis de forma assíncrona."""
-    tasks = [_process_app(app) for app in apps]
+async def _process_all_negocios(negocios: list[dict]):
+    """Processa todos os negócios elegíveis de forma assíncrona."""
+    tasks = [_process_negocio(neg) for neg in negocios]
     await asyncio.gather(*tasks, return_exceptions=True)
 
 
@@ -210,8 +204,7 @@ async def trigger_pipeline(
 ):
     """
     Endpoint que recebe webhook do pg_cron.
-    Valida hora, busca apps elegíveis, inicia processamento em background.
-    Retorna imediatamente 200.
+    Valida hora, busca negócios elegíveis, inicia processamento em background.
     """
     hora = body.hora_atual
 
@@ -222,25 +215,25 @@ async def trigger_pipeline(
         mensagem=f"Trigger recebido para hora={hora}",
     )
 
-    apps = get_apps_for_hour(hora)
-    nomes = [a["nome"] for a in apps]
+    negocios = get_negocios_for_hour(hora)
+    nomes = [n["nome"] for n in negocios]
 
-    if not apps:
+    if not negocios:
         _log_etapa(
             app_id=None,
             etapa="trigger_vazio",
             status="info",
-            mensagem=f"Nenhum app elegível para hora={hora}",
+            mensagem=f"Nenhum negócio elegível para hora={hora}",
         )
-        return PipelineTriggerResponse(status="no_apps", apps_triggered=[])
+        return PipelineTriggerResponse(status="no_negocios", negocios_triggered=[])
 
     _log_etapa(
         app_id=None,
-        etapa="trigger_apps",
+        etapa="trigger_negocios",
         status="info",
-        mensagem=f"Apps elegíveis para hora={hora}: {', '.join(nomes)}",
+        mensagem=f"Negócios elegíveis para hora={hora}: {', '.join(nomes)}",
     )
 
-    background_tasks.add_task(_process_all_apps, apps)
+    background_tasks.add_task(_process_all_negocios, negocios)
 
-    return PipelineTriggerResponse(status="processing", apps_triggered=nomes)
+    return PipelineTriggerResponse(status="processing", negocios_triggered=nomes)

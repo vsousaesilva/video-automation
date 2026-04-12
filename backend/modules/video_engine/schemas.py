@@ -4,9 +4,9 @@ from datetime import datetime
 from enum import Enum
 
 
-# === Enums de App ===
+# === Enums de Negócio ===
 
-class StatusApp(str, Enum):
+class StatusNegocio(str, Enum):
     ativo = "ativo"
     pausado = "pausado"
     arquivado = "arquivado"
@@ -29,9 +29,9 @@ class Frequencia(str, Enum):
     semanal = "semanal"
 
 
-# === App ===
+# === Negócio ===
 
-class AppCreate(BaseModel):
+class NegocioCreate(BaseModel):
     nome: str = Field(min_length=2, max_length=255)
     categoria: Optional[str] = None
     descricao: Optional[str] = None
@@ -58,7 +58,7 @@ class AppCreate(BaseModel):
                     raise ValueError("dias_semana deve conter valores entre 0 e 6")
 
 
-class AppUpdate(BaseModel):
+class NegocioUpdate(BaseModel):
     nome: Optional[str] = Field(None, min_length=2, max_length=255)
     categoria: Optional[str] = None
     descricao: Optional[str] = None
@@ -74,7 +74,7 @@ class AppUpdate(BaseModel):
     horario_disparo: Optional[int] = Field(None, ge=0, le=23)
     dias_semana: Optional[list[int]] = None
     tom_voz: Optional[str] = None
-    status: Optional[StatusApp] = None
+    status: Optional[StatusNegocio] = None
     keywords: Optional[list[str]] = None
 
     def model_post_init(self, __context):
@@ -86,7 +86,7 @@ class AppUpdate(BaseModel):
                     raise ValueError("dias_semana deve conter valores entre 0 e 6")
 
 
-class AppResponse(BaseModel):
+class NegocioResponse(BaseModel):
     id: str
     workspace_id: str
     nome: str
@@ -112,8 +112,8 @@ class AppResponse(BaseModel):
 
 class ScheduleItem(BaseModel):
     hora: int
-    app: str
-    app_id: str
+    negocio: str
+    negocio_id: str
     status: str
     categoria: Optional[str] = None
 
@@ -130,7 +130,7 @@ class TipoMedia(str, Enum):
 class MediaUploadResponse(BaseModel):
     id: str
     workspace_id: str
-    app_id: Optional[str] = None
+    negocio_id: Optional[str] = None
     nome: str
     url_storage: str
     tipo: str
@@ -148,7 +148,7 @@ class MediaUpdate(BaseModel):
 
 
 class MediaListParams(BaseModel):
-    app_id: Optional[str] = None
+    negocio_id: Optional[str] = None
     tipo: Optional[TipoMedia] = None
     tags: Optional[list[str]] = None
     apenas_workspace: bool = False
@@ -191,7 +191,7 @@ class ContentOutput(BaseModel):
 
 class ConteudoResponse(BaseModel):
     id: str
-    app_id: str
+    negocio_id: str
     tipo_conteudo: Optional[str] = None
     roteiro: Optional[str] = None
     titulo: Optional[str] = None
@@ -214,7 +214,7 @@ class PipelineTriggerRequest(BaseModel):
 
 class PipelineTriggerResponse(BaseModel):
     status: str
-    apps_triggered: list[str]
+    negocios_triggered: list[str]
 
 
 # === Vídeos ===
@@ -222,7 +222,7 @@ class PipelineTriggerResponse(BaseModel):
 class VideoResponse(BaseModel):
     id: str
     conteudo_id: Optional[str] = None
-    app_id: str
+    negocio_id: str
     url_storage_vertical: Optional[str] = None
     duracao_vertical_segundos: Optional[int] = None
     url_storage_horizontal: Optional[str] = None
@@ -242,5 +242,5 @@ class VideoResponse(BaseModel):
 
 
 class VideoDetailResponse(VideoResponse):
-    app_nome: Optional[str] = None
+    negocio_nome: Optional[str] = None
     conteudo: Optional[ConteudoResponse] = None

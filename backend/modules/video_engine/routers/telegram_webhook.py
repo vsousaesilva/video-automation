@@ -55,7 +55,7 @@ def _get_video_with_app(video_id: str) -> tuple[dict | None, dict | None, dict |
         return None, None, None
     video = video_result.data[0]
 
-    app_result = supabase.table("apps").select("*").eq("id", video["app_id"]).execute()
+    app_result = supabase.table("negocios").select("*").eq("id", video["negocio_id"]).execute()
     if not app_result.data:
         return video, None, None
     app = app_result.data[0]
@@ -72,7 +72,7 @@ def _log_etapa(app_id: str | None, video_id: str | None, etapa: str,
     try:
         supabase = get_supabase()
         supabase.table("execution_logs").insert({
-            "app_id": app_id,
+            "negocio_id": app_id,
             "video_id": video_id,
             "etapa": etapa,
             "status": status,
@@ -100,7 +100,7 @@ async def _handle_aprovar(video: dict, user: dict, app: dict = None, workspace: 
             "status": "concluido",
         }).eq("id", video["conteudo_id"]).execute()
 
-    _log_etapa(video["app_id"], video["id"], "aprovacao_telegram", "sucesso",
+    _log_etapa(video["negocio_id"], video["id"], "aprovacao_telegram", "sucesso",
                f"Vídeo aprovado via Telegram por {user['nome']}")
 
     # Disparar publicação orquestrada em todas as plataformas ativas
@@ -109,7 +109,7 @@ async def _handle_aprovar(video: dict, user: dict, app: dict = None, workspace: 
             from modules.video_engine.services.publisher_orchestrator import publish_all_platforms
             import asyncio
             asyncio.create_task(publish_all_platforms(video["id"]))
-            _log_etapa(video["app_id"], video["id"], "orquestrador_auto_trigger", "info",
+            _log_etapa(video["negocio_id"], video["id"], "orquestrador_auto_trigger", "info",
                        "Publicação orquestrada disparada automaticamente após aprovação via Telegram")
         except Exception as e:
             logger.error(f"Erro ao disparar publicação orquestrada: {e}")
@@ -132,7 +132,7 @@ async def _handle_rejeitar(video: dict, user: dict) -> dict:
             "status": "erro",
         }).eq("id", video["conteudo_id"]).execute()
 
-    _log_etapa(video["app_id"], video["id"], "rejeicao_telegram", "sucesso",
+    _log_etapa(video["negocio_id"], video["id"], "rejeicao_telegram", "sucesso",
                f"Vídeo rejeitado via Telegram por {user['nome']}")
 
     return {"status": "rejeitado_telegram", "message": f"Vídeo rejeitado por {user['nome']}"}
@@ -154,14 +154,14 @@ async def _handle_regenerar(video: dict, app: dict, user: dict) -> dict:
             "status": "erro",
         }).eq("id", video["conteudo_id"]).execute()
 
-    _log_etapa(video["app_id"], video["id"], "regeneracao_telegram", "sucesso",
+    _log_etapa(video["negocio_id"], video["id"], "regeneracao_telegram", "sucesso",
                f"Regeneração solicitada via Telegram por {user['nome']}")
 
     # Disparar novo pipeline em background
     try:
-        from modules.video_engine.routers.pipeline import _process_app
+        from modules.video_engine.routers.pipeline import _process_negocio
         import asyncio
-        asyncio.create_task(_process_app(app))
+        asyncio.create_task(_process_negocio(app))
         logger.info(f"Pipeline reiniciado para app {app['nome']} por solicitação Telegram")
     except Exception as e:
         logger.error(f"Erro ao reiniciar pipeline: {e}")

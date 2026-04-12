@@ -93,7 +93,7 @@ export default function Dashboard() {
                 >
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">
-                      {video.app_id?.slice(0, 8)}...
+                      {video.negocio_id?.slice(0, 8)}...
                     </p>
                     <p className="text-xs text-gray-500">
                       {new Date(video.criado_em).toLocaleString('pt-BR')}

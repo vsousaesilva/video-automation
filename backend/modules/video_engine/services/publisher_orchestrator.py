@@ -22,7 +22,7 @@ def _log_etapa(app_id: str, video_id: str, etapa: str, status: str, mensagem: st
     try:
         supabase = get_supabase()
         supabase.table("execution_logs").insert({
-            "app_id": app_id,
+            "negocio_id": app_id,
             "video_id": video_id,
             "etapa": etapa,
             "status": status,
@@ -46,7 +46,7 @@ def _load_context(video_id: str) -> tuple[dict, dict, dict, dict]:
         raise ValueError(f"Video {video_id} nao encontrado")
     video = video_result.data[0]
 
-    app_result = supabase.table("apps").select("*").eq("id", video["app_id"]).execute()
+    app_result = supabase.table("negocios").select("*").eq("id", video["negocio_id"]).execute()
     if not app_result.data:
         raise ValueError(f"App {video['app_id']} nao encontrado")
     app = app_result.data[0]

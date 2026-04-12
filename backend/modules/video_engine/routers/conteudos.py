@@ -11,7 +11,7 @@ router = APIRouter(prefix="/conteudos", tags=["Conteúdos"])
 
 @router.get("", response_model=list[ConteudoResponse])
 async def list_conteudos(
-    app_id: Optional[str] = Query(None, description="Filtrar por app"),
+    negocio_id: Optional[str] = Query(None, description="Filtrar por negócio"),
     status: Optional[str] = Query(None, description="Filtrar por status"),
     limit: int = Query(20, ge=1, le=100),
     current_user: dict = Depends(get_current_user),
@@ -21,38 +21,37 @@ async def list_conteudos(
     workspace_id = current_user["workspace_id"]
 
     # Se app_id informado, validar que pertence ao workspace
-    if app_id:
-        app_check = (
-            supabase.table("apps")
+    if negocio_id:
+        neg_check = (
+            supabase.table("negocios")
             .select("id")
-            .eq("id", app_id)
+            .eq("id", negocio_id)
             .eq("workspace_id", workspace_id)
             .execute()
         )
-        if not app_check.data:
-            raise HTTPException(status_code=404, detail="App não encontrado")
+        if not neg_check.data:
+            raise HTTPException(status_code=404, detail="Negócio não encontrado")
 
         query = (
             supabase.table("conteudos")
             .select("*")
-            .eq("app_id", app_id)
+            .eq("negocio_id", negocio_id)
         )
     else:
-        # Buscar todos os apps do workspace e filtrar conteúdos
-        apps_result = (
-            supabase.table("apps")
+        negocios_result = (
+            supabase.table("negocios")
             .select("id")
             .eq("workspace_id", workspace_id)
             .execute()
         )
-        app_ids = [a["id"] for a in apps_result.data]
-        if not app_ids:
+        neg_ids = [n["id"] for n in negocios_result.data]
+        if not neg_ids:
             return []
 
         query = (
             supabase.table("conteudos")
             .select("*")
-            .in_("app_id", app_ids)
+            .in_("negocio_id", neg_ids)
         )
 
     if status:
@@ -73,7 +72,7 @@ async def get_conteudo(
 
     result = (
         supabase.table("conteudos")
-        .select("*, apps(workspace_id)")
+        .select("*, negocios(workspace_id)")
         .eq("id", conteudo_id)
         .execute()
     )
@@ -84,7 +83,7 @@ async def get_conteudo(
     conteudo = result.data[0]
 
     # Validar que o conteúdo pertence ao workspace do usuário
-    app_info = conteudo.pop("apps", None)
+    app_info = conteudo.pop("negocios", None)
     if not app_info or app_info.get("workspace_id") != workspace_id:
         raise HTTPException(status_code=404, detail="Conteúdo não encontrado")
 

@@ -153,7 +153,7 @@ def _log_etapa(app_id: str | None, etapa: str, status: str, mensagem: str, video
         "criado_em": datetime.now(timezone.utc).isoformat(),
     }
     if app_id:
-        log_data["app_id"] = app_id
+        log_data["negocio_id"] = app_id
     if video_id:
         log_data["video_id"] = video_id
     try:
@@ -243,7 +243,7 @@ async def save_content(app_id: str, conteudo: dict) -> dict:
     supabase = get_supabase()
 
     data = {
-        "app_id": app_id,
+        "negocio_id": app_id,
         "tipo_conteudo": conteudo["tipo_conteudo"],
         "roteiro": conteudo["roteiro"],
         "titulo": conteudo["titulo"],

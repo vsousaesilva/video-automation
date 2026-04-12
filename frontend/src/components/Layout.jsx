@@ -5,10 +5,11 @@ import useDashboardStore from '../stores/dashboardStore'
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: DashboardIcon },
-  { to: '/apps', label: 'Apps', icon: AppsIcon },
-  { to: '/approvals', label: 'Aprovações', icon: ApprovalsIcon, badge: true },
-  { to: '/history', label: 'Histórico', icon: HistoryIcon },
-  { to: '/settings', label: 'Configurações', icon: SettingsIcon },
+  { to: '/negocios', label: 'Negocios', icon: NegociosIcon },
+  { to: '/approvals', label: 'Aprovacoes', icon: ApprovalsIcon, badge: true },
+  { to: '/history', label: 'Historico', icon: HistoryIcon },
+  { to: '/settings/billing', label: 'Plano', icon: BillingIcon },
+  { to: '/settings', label: 'Configuracoes', icon: SettingsIcon },
 ]
 
 export default function Layout() {
@@ -33,7 +34,7 @@ export default function Layout() {
       {/* Sidebar */}
       <aside className="w-64 bg-gray-900 text-white flex flex-col">
         <div className="p-6 border-b border-gray-700">
-          <h1 className="text-lg font-bold tracking-tight">Video Automation</h1>
+          <h1 className="text-lg font-bold tracking-tight">Usina do Tempo</h1>
           <p className="text-xs text-gray-400 mt-1">Plataforma de Marketing</p>
         </div>
 
@@ -101,10 +102,18 @@ function DashboardIcon() {
   )
 }
 
-function AppsIcon() {
+function NegociosIcon() {
   return (
     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+    </svg>
+  )
+}
+
+function BillingIcon() {
+  return (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
     </svg>
   )
 }

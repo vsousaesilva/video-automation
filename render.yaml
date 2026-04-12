@@ -53,8 +53,10 @@ services:
           property: host
 
   # --- Frontend (React Static Site) ---
+  # Serviço ativo no Render: "video-automation-app" (criado manualmente)
+  # Se precisar recriar via render.yaml, usar o nome abaixo.
   - type: web
-    name: video-automation-frontend
+    name: video-automation-app
     runtime: static
     rootDir: frontend
     buildCommand: npm install && npm run build
@@ -71,7 +73,4 @@ services:
       - key: NODE_VERSION
         value: "20"
       - key: VITE_API_URL
-        fromService:
-          name: video-automation-api
-          type: web
-          property: host
+        value: "https://video-automation-api.onrender.com"

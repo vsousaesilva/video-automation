@@ -32,7 +32,13 @@ class Settings(BaseSettings):
     # Resend
     resend_api_key: str = ""
 
+    # Asaas
+    asaas_api_key: str = ""
+    asaas_base_url: str = "https://sandbox.asaas.com/api/v3"  # sandbox; prod: https://api.asaas.com/v3
+    asaas_webhook_token: str = ""
+
     # App
+    frontend_url: str = "http://localhost:5173"
     secret_key: str = "insecure-dev-key-change-me"
     environment: str = "development"
     base_url: str = "http://localhost:8000"

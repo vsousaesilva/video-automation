@@ -56,7 +56,7 @@ export default function PipelineTimeline({ schedule }) {
 
             {/* App name */}
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">{item.app}</p>
+              <p className="text-sm font-medium text-gray-900 truncate">{item.negocio || item.app}</p>
               {item.categoria && (
                 <p className="text-xs text-gray-500">{item.categoria}</p>
               )}

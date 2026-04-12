@@ -35,8 +35,8 @@ class RejectRequest(BaseModel):
 
 def _get_video_with_context(video_id: str, workspace_id: str) -> tuple[dict, dict, dict]:
     """
-    Busca video, app e workspace. Valida pertencimento ao workspace.
-    Returns: (video, app, workspace)
+    Busca video, negocio e workspace. Valida pertencimento ao workspace.
+    Returns: (video, negocio, workspace)
     """
     supabase = get_supabase()
 
@@ -45,9 +45,9 @@ def _get_video_with_context(video_id: str, workspace_id: str) -> tuple[dict, dic
         raise HTTPException(status_code=404, detail="Video nao encontrado")
     video = video_result.data[0]
 
-    app_result = supabase.table("apps").select("*").eq("id", video["app_id"]).execute()
+    app_result = supabase.table("negocios").select("*").eq("id", video["negocio_id"]).execute()
     if not app_result.data:
-        raise HTTPException(status_code=404, detail="App nao encontrado")
+        raise HTTPException(status_code=404, detail="Negócio não encontrado")
     app = app_result.data[0]
 
     if app["workspace_id"] != workspace_id:
@@ -66,7 +66,7 @@ def _log_etapa(app_id: str, video_id: str, etapa: str, status: str, mensagem: st
     try:
         supabase = get_supabase()
         supabase.table("execution_logs").insert({
-            "app_id": app_id,
+            "negocio_id": app_id,
             "video_id": video_id,
             "etapa": etapa,
             "status": status,
@@ -282,8 +282,8 @@ async def regenerate_video(
     # Reiniciar pipeline em background
     async def _regenerate_pipeline():
         try:
-            from modules.video_engine.routers.pipeline import _process_app
-            await _process_app(app)
+            from modules.video_engine.routers.pipeline import _process_negocio
+            await _process_negocio(app)
         except Exception as e:
             logger.error(f"Erro ao reiniciar pipeline para app {app['nome']}: {e}")
 

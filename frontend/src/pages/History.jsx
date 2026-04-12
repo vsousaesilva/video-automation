@@ -12,39 +12,39 @@ const STATUS_STYLES = {
 }
 
 export default function History() {
-  const [apps, setApps] = useState([])
-  const [selectedAppId, setSelectedAppId] = useState('all')
+  const [negocios, setNegocios] = useState([])
+  const [selectedNegocioId, setSelectedNegocioId] = useState('all')
   const [videos, setVideos] = useState([])
   const [loading, setLoading] = useState(true)
   const [loadingVideos, setLoadingVideos] = useState(false)
 
   useEffect(() => {
-    api.get('/apps').then(res => {
-      setApps(res.data)
+    api.get('/negocios').then(res => {
+      setNegocios(res.data)
       setLoading(false)
     }).catch(() => setLoading(false))
   }, [])
 
   useEffect(() => {
-    if (apps.length === 0) return
+    if (negocios.length === 0) return
     setLoadingVideos(true)
 
     const fetchHistory = async () => {
-      const targetApps = selectedAppId === 'all' ? apps : apps.filter(a => a.id === selectedAppId)
+      const targetNegocios = selectedNegocioId === 'all' ? negocios : negocios.filter(n => n.id === selectedNegocioId)
       let allVideos = []
 
-      for (const app of targetApps) {
+      for (const negocio of targetNegocios) {
         try {
-          const res = await api.get(`/apps/${app.id}/history`)
+          const res = await api.get(`/negocios/${negocio.id}/history`)
           const vids = (res.data || []).map(v => ({
             ...v,
-            app_nome: app.nome,
+            negocio_nome: negocio.nome,
             titulo: v.conteudos?.titulo || null,
             tipo_conteudo: v.conteudos?.tipo_conteudo || null,
           }))
           allVideos = [...allVideos, ...vids]
         } catch {
-          // App sem histórico
+          // Negocio sem historico
         }
       }
 
@@ -54,7 +54,7 @@ export default function History() {
     }
 
     fetchHistory()
-  }, [apps, selectedAppId])
+  }, [negocios, selectedNegocioId])
 
   const style = (status) => STATUS_STYLES[status] || { bg: 'bg-gray-100', text: 'text-gray-700' }
 
@@ -62,11 +62,11 @@ export default function History() {
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Histórico</h1>
-        <select value={selectedAppId} onChange={e => setSelectedAppId(e.target.value)}
+        <select value={selectedNegocioId} onChange={e => setSelectedNegocioId(e.target.value)}
           className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-          <option value="all">Todos os apps</option>
-          {apps.map(app => (
-            <option key={app.id} value={app.id}>{app.nome}</option>
+          <option value="all">Todos os negocios</option>
+          {negocios.map(n => (
+            <option key={n.id} value={n.id}>{n.nome}</option>
           ))}
         </select>
       </div>
@@ -80,7 +80,7 @@ export default function History() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">App</th>
+                <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">Negocio</th>
                 <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">Título</th>
                 <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">Tipo</th>
                 <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">Status</th>
@@ -94,7 +94,7 @@ export default function History() {
                 const s = style(video.status)
                 return (
                   <tr key={video.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm font-medium text-gray-900">{video.app_nome}</td>
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900">{video.negocio_nome}</td>
                     <td className="px-4 py-3 text-sm text-gray-600 max-w-[200px] truncate">
                       {video.titulo || '—'}
                     </td>

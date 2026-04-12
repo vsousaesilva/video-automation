@@ -60,6 +60,19 @@ const useAuthStore = create((set) => ({
     }
   },
 
+  signup: async (nome, email, password, workspace_nome) => {
+    set({ loading: true, error: null })
+    try {
+      await api.post('/auth/signup', { nome, email, password, workspace_nome })
+      set({ loading: false })
+      return true
+    } catch (err) {
+      const message = err.response?.data?.detail || 'Erro ao criar conta'
+      set({ error: message, loading: false })
+      return false
+    }
+  },
+
   logout: () => {
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')

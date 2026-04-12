@@ -19,7 +19,7 @@ const useDashboardStore = create((set) => ({
 
   fetchSchedule: async () => {
     try {
-      const res = await api.get('/apps/schedule/today')
+      const res = await api.get('/negocios/schedule/today')
       set({ schedule: res.data })
     } catch (err) {
       console.error('Erro ao buscar agenda do dia:', err)
@@ -31,9 +31,9 @@ const useDashboardStore = create((set) => ({
       const res = await api.get('/videos/pending')
       const allVideos = res.data
 
-      // Buscar apps para obter histórico
-      const appsRes = await api.get('/apps')
-      const apps = appsRes.data
+      // Buscar negocios para obter historico
+      const negociosRes = await api.get('/negocios')
+      const negocios = negociosRes.data
 
       let hoje = 0, semana = 0, mes = 0
       const now = new Date()
@@ -42,10 +42,10 @@ const useDashboardStore = create((set) => ({
       startOfWeek.setDate(startOfDay.getDate() - startOfDay.getDay())
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
 
-      // Buscar histórico de cada app para contar publicados
-      for (const app of apps) {
+      // Buscar historico de cada negocio para contar publicados
+      for (const negocio of negocios) {
         try {
-          const histRes = await api.get(`/apps/${app.id}/history`)
+          const histRes = await api.get(`/negocios/${negocio.id}/history`)
           const videos = histRes.data || []
           for (const v of videos) {
             if (v.status !== 'publicado' || !v.publicado_em) continue
@@ -55,7 +55,7 @@ const useDashboardStore = create((set) => ({
             if (pub >= startOfDay) hoje++
           }
         } catch {
-          // App sem histórico — ignorar
+          // Negocio sem historico — ignorar
         }
       }
 
