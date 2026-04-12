@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 
-from models.schemas import LoginRequest, TokenResponse, RefreshRequest, AccessTokenResponse, InviteAccept
+from models.schemas import LoginRequest, TokenResponse, RefreshRequest, AccessTokenResponse, InviteAccept, PasswordChangeRequest
 from auth_deps import (
     verify_password,
     hash_password,
@@ -58,6 +58,23 @@ async def logout(current_user: dict = Depends(get_current_user)):
     # JWT é stateless — o logout real acontece no frontend descartando o token.
     # Endpoint existe para manter a interface REST consistente.
     return None
+
+
+@router.put("/change-password")
+async def change_password(
+    body: PasswordChangeRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Altera a senha do usuário autenticado."""
+    if not verify_password(body.senha_atual, current_user["senha_hash"]):
+        raise HTTPException(status_code=400, detail="Senha atual incorreta")
+
+    supabase = get_supabase()
+    supabase.table("users").update({
+        "senha_hash": hash_password(body.nova_senha),
+    }).eq("id", current_user["id"]).execute()
+
+    return {"detail": "Senha alterada com sucesso"}
 
 
 @router.post("/accept-invite")

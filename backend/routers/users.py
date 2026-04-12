@@ -8,6 +8,12 @@ from db import get_supabase
 router = APIRouter(prefix="/users", tags=["Usuários"])
 
 
+@router.get("/me", response_model=UserResponse)
+async def get_me(current_user: dict = Depends(get_current_user)):
+    """Retorna os dados do usuário autenticado."""
+    return current_user
+
+
 @router.get("", response_model=list[UserResponse])
 async def list_users(current_user: dict = Depends(require_role(["admin"]))):
     supabase = get_supabase()

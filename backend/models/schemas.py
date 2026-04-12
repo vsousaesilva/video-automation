@@ -97,6 +97,11 @@ class InviteAccept(BaseModel):
     senha: str = Field(min_length=6)
 
 
+class PasswordChangeRequest(BaseModel):
+    senha_atual: str = Field(min_length=6)
+    nova_senha: str = Field(min_length=6)
+
+
 # === Enums de App ===
 
 class StatusApp(str, Enum):

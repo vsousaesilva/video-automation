@@ -20,6 +20,10 @@ Thumbs.db
 # Logs
 *.log
 
+# Pip install artifacts
+pip-log.txt
+pip-delete-this-directory.txt
+
 # Temp video files
 *TEMP_MPY*
 *.mp4

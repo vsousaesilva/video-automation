@@ -4,6 +4,7 @@ import useAuthStore from '../stores/authStore'
 import MediaUploader from '../components/MediaUploader'
 
 const TABS = [
+  { key: 'account', label: 'Minha Conta' },
   { key: 'workspace', label: 'Workspace' },
   { key: 'users', label: 'Usuários' },
   { key: 'media', label: 'Banco Global' },
@@ -16,7 +17,7 @@ const PAPEIS = [
 ]
 
 export default function Settings() {
-  const [tab, setTab] = useState('workspace')
+  const [tab, setTab] = useState('account')
   const user = useAuthStore(s => s.user)
   const isAdmin = user?.papel === 'admin'
 
@@ -38,9 +39,113 @@ export default function Settings() {
         </div>
       </div>
 
+      {tab === 'account' && <AccountSettings />}
       {tab === 'workspace' && <WorkspaceSettings isAdmin={isAdmin} />}
       {tab === 'users' && <UsersSettings isAdmin={isAdmin} />}
       {tab === 'media' && <MediaUploader appId={null} />}
+    </div>
+  )
+}
+
+function AccountSettings() {
+  const [profile, setProfile] = useState(null)
+  const [loadingProfile, setLoadingProfile] = useState(true)
+  const [form, setForm] = useState({ senha_atual: '', nova_senha: '', confirmar_senha: '' })
+  const [saving, setSaving] = useState(false)
+  const [feedback, setFeedback] = useState(null)
+
+  useEffect(() => {
+    api.get('/users/me').then(res => {
+      setProfile(res.data)
+      setLoadingProfile(false)
+    }).catch(() => setLoadingProfile(false))
+  }, [])
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault()
+    setFeedback(null)
+
+    if (form.nova_senha !== form.confirmar_senha) {
+      setFeedback({ type: 'error', msg: 'A nova senha e a confirmação não coincidem.' })
+      return
+    }
+
+    setSaving(true)
+    try {
+      await api.put('/auth/change-password', {
+        senha_atual: form.senha_atual,
+        nova_senha: form.nova_senha,
+      })
+      setFeedback({ type: 'success', msg: 'Senha alterada com sucesso.' })
+      setForm({ senha_atual: '', nova_senha: '', confirmar_senha: '' })
+    } catch (err) {
+      setFeedback({ type: 'error', msg: err.response?.data?.detail || 'Erro ao alterar senha' })
+    }
+    setSaving(false)
+  }
+
+  if (loadingProfile) return <p className="text-gray-500">Carregando...</p>
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Informações da conta</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-500 mb-1">Nome</label>
+            <p className="text-sm text-gray-900">{profile?.nome || '—'}</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-500 mb-1">E-mail</label>
+            <p className="text-sm text-gray-900">{profile?.email || '—'}</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-500 mb-1">Papel</label>
+            <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+              profile?.papel === 'admin' ? 'bg-indigo-100 text-indigo-700' :
+              profile?.papel === 'editor' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'
+            }`}>{profile?.papel}</span>
+          </div>
+        </div>
+      </div>
+
+      <form onSubmit={handleChangePassword} className="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
+        <h3 className="text-lg font-semibold text-gray-900">Alterar senha</h3>
+
+        {feedback && (
+          <div className={`p-3 rounded-lg text-sm ${
+            feedback.type === 'success' ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-red-50 border border-red-200 text-red-700'
+          }`}>{feedback.msg}</div>
+        )}
+
+        <div className="max-w-md space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Senha atual</label>
+            <input type="password" value={form.senha_atual} onChange={e => setForm(p => ({ ...p, senha_atual: e.target.value }))}
+              required minLength={6}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Nova senha</label>
+            <input type="password" value={form.nova_senha} onChange={e => setForm(p => ({ ...p, nova_senha: e.target.value }))}
+              required minLength={6}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Confirmar nova senha</label>
+            <input type="password" value={form.confirmar_senha} onChange={e => setForm(p => ({ ...p, confirmar_senha: e.target.value }))}
+              required minLength={6}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
+          </div>
+        </div>
+
+        <div className="pt-4 border-t border-gray-200">
+          <button type="submit" disabled={saving}
+            className="px-6 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:bg-indigo-300 transition-colors">
+            {saving ? 'Salvando...' : 'Alterar senha'}
+          </button>
+        </div>
+      </form>
     </div>
   )
 }
