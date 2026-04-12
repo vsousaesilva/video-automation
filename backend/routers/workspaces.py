@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 
-from models.schemas import WorkspaceCreate, WorkspaceUpdate, WorkspaceResponse, TokenResponse
-from auth_deps import hash_password, create_access_token, create_refresh_token, get_current_user, require_role
-from db import get_supabase
+from core.schemas import WorkspaceCreate, WorkspaceUpdate, WorkspaceResponse, TokenResponse
+from core.auth import hash_password, create_access_token, create_refresh_token, get_current_user, require_role
+from core.db import get_supabase
 
 router = APIRouter(prefix="/workspaces", tags=["Workspaces"])
 

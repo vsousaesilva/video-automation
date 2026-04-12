@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 
-from models.schemas import LoginRequest, TokenResponse, RefreshRequest, AccessTokenResponse, InviteAccept, PasswordChangeRequest
-from auth_deps import (
+from core.schemas import LoginRequest, TokenResponse, RefreshRequest, AccessTokenResponse, InviteAccept, PasswordChangeRequest
+from core.auth import (
     verify_password,
     hash_password,
     create_access_token,
@@ -9,7 +9,7 @@ from auth_deps import (
     decode_token,
     get_current_user,
 )
-from db import get_supabase
+from core.db import get_supabase
 
 router = APIRouter(prefix="/auth", tags=["Autenticação"])
 

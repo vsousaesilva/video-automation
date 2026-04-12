@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 
-from models.schemas import UserResponse, UserInvite, UserUpdate
-from auth_deps import get_current_user, require_role, create_invite_token
-from config import get_settings
-from db import get_supabase
+from core.schemas import UserResponse, UserInvite, UserUpdate
+from core.auth import get_current_user, require_role, create_invite_token
+from core.config import get_settings
+from core.db import get_supabase
 
 router = APIRouter(prefix="/users", tags=["Usuários"])
 

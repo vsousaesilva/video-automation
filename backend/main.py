@@ -4,9 +4,18 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-from config import get_settings
-from routers import auth, workspaces, users, apps, media, pipeline, conteudos, videos
-from routers import telegram_webhook, publish, approvals
+from core.config import get_settings
+from routers import auth, workspaces, users
+from modules.video_engine.routers import (
+    apps,
+    media,
+    pipeline,
+    conteudos,
+    videos,
+    publish,
+    approvals,
+    telegram_webhook,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +26,7 @@ settings = get_settings()
 async def lifespan(app: FastAPI):
     """Registra o webhook do Telegram na inicialização."""
     try:
-        from services.telegram_bot import register_webhook
+        from modules.video_engine.services.telegram_bot import register_webhook
         await register_webhook(settings.base_url)
     except Exception as e:
         logger.warning(f"Não foi possível registrar webhook do Telegram: {e}")
