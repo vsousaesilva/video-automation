@@ -3,6 +3,7 @@ FROM python:3.11-slim
 # FFmpeg é necessário para o motor de vídeo
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
+    fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

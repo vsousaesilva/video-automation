@@ -50,10 +50,35 @@ HEIGHT = V_HEIGHT
 MIN_DURATION = V_MIN_DURATION
 MAX_DURATION = V_MAX_DURATION
 
-# Fonte padrao — caminho completo no Windows
-_FONT_PATH = os.path.join(os.environ.get("WINDIR", r"C:\Windows"), "Fonts", "arialbd.ttf")
-if not os.path.exists(_FONT_PATH):
-    _FONT_PATH = os.path.join(os.environ.get("WINDIR", r"C:\Windows"), "Fonts", "arial.ttf")
+# Fonte padrao — detecta SO para caminho correto
+import platform as _platform
+
+def _find_font() -> str:
+    """Encontra fonte disponivel no sistema (Windows ou Linux)."""
+    candidates = []
+    if _platform.system() == "Windows":
+        windir = os.environ.get("WINDIR", r"C:\Windows")
+        candidates = [
+            os.path.join(windir, "Fonts", "arialbd.ttf"),
+            os.path.join(windir, "Fonts", "arial.ttf"),
+        ]
+    else:
+        # Linux — fontes comuns
+        candidates = [
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+            "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+            "/usr/share/fonts/TTF/DejaVuSans-Bold.ttf",
+            "/usr/share/fonts/dejavu-sans-fonts/DejaVuSans-Bold.ttf",
+        ]
+    for path in candidates:
+        if os.path.exists(path):
+            return path
+    # Fallback: deixa MoviePy usar fonte padrao
+    return "DejaVu-Sans"
+
+_FONT_PATH = _find_font()
 
 
 @dataclass
@@ -941,9 +966,26 @@ async def build_all_formats(
     _log_etapa(app_id, None, "build_all_media", "info", "Selecionando midias")
 
     keywords_visuais = conteudo.get("keywords_visuais", [])
+    # Se keywords_visuais vazio (ex: conteudo vindo do Content AI), extrair do roteiro
+    if not keywords_visuais and roteiro:
+        import re
+        # Extrair palavras significativas do roteiro (>4 chars, sem stopwords comuns)
+        _stopwords = {"para", "como", "mais", "isso", "esse", "esta", "esta", "pode",
+                      "voce", "aqui", "onde", "qual", "pela", "pelo", "essa", "nosso",
+                      "nossa", "sobre", "entre", "depois", "antes", "muito", "quando",
+                      "seus", "suas", "cada", "toda", "todo", "mesmo", "ainda", "tambem"}
+        words = re.findall(r"[a-záàâãéêíóôõúç]{5,}", roteiro.lower())
+        seen = set()
+        for w in words:
+            if w not in _stopwords and w not in seen:
+                seen.add(w)
+                keywords_visuais.append(w)
+            if len(keywords_visuais) >= 8:
+                break
+        logger.info(f"Keywords visuais extraidas do roteiro: {keywords_visuais}")
     workspace_id = app.get("workspace_id", workspace.get("id"))
     media_list = await select_media_for_script(
-        app_id=app_id,
+        negocio_id=app_id,
         workspace_id=workspace_id,
         visual_keywords=keywords_visuais,
         min_count=5,
