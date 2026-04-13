@@ -106,10 +106,15 @@ export default function Contacts() {
         body: formData,
       })
       const result = await res.json()
-      setImportResult(result)
-      fetchContacts()
+      if (!res.ok) {
+        setImportResult({ total: 0, criados: 0, erros: 1, detalhes_erros: [result.detail || 'Erro ao importar'] })
+      } else {
+        setImportResult(result)
+        fetchContacts()
+      }
     } catch (err) {
       console.error('Erro na importacao:', err)
+      setImportResult({ total: 0, criados: 0, erros: 1, detalhes_erros: [err.message] })
     } finally {
       setImporting(false)
     }

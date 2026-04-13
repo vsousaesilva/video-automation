@@ -113,6 +113,26 @@ async def list_contacts(
     }
 
 
+@router.post("/contacts/import")
+async def import_contacts(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user),
+):
+    """Importa contatos via CSV."""
+    if not file.filename.endswith((".csv", ".xlsx", ".xls")):
+        raise HTTPException(400, "Formato nao suportado. Use CSV ou Excel.")
+
+    from modules.crm.services.importer import import_contacts_from_file
+
+    content = await file.read()
+    result = await import_contacts_from_file(
+        content=content,
+        filename=file.filename,
+        workspace_id=current_user["workspace_id"],
+    )
+    return result
+
+
 @router.post("/contacts")
 async def create_contact(
     body: ContactCreate,
@@ -269,25 +289,6 @@ async def delete_contact(
 
     return {"detail": "Contato desativado"}
 
-
-@router.post("/contacts/import")
-async def import_contacts(
-    file: UploadFile = File(...),
-    current_user: dict = Depends(get_current_user),
-):
-    """Importa contatos via CSV."""
-    if not file.filename.endswith((".csv", ".xlsx", ".xls")):
-        raise HTTPException(400, "Formato nao suportado. Use CSV ou Excel.")
-
-    from modules.crm.services.importer import import_contacts_from_file
-
-    content = await file.read()
-    result = await import_contacts_from_file(
-        content=content,
-        filename=file.filename,
-        workspace_id=current_user["workspace_id"],
-    )
-    return result
 
 
 # ============================================================
