@@ -318,7 +318,47 @@ async def use_in_video_engine(
         # Marcar conteúdo como usado
         supabase.table("generated_contents").update({"usado_em": "video_engine"}).eq("id", body.generated_content_id).execute()
 
-        return {"status": "created", "conteudo_id": result.data[0]["id"]}
+        conteudo_id = result.data[0]["id"]
+
+        # Disparar construção do vídeo em background (Celery ou asyncio)
+        try:
+            from modules.video_engine.routers.pipeline import _celery_available
+            if _celery_available():
+                from modules.content_ai.tasks import build_video_from_content_task
+                task = build_video_from_content_task.delay(conteudo_id, body.negocio_id, workspace_id)
+                logger.info(f"Build video enfileirado via Celery: task_id={task.id}")
+                return {
+                    "status": "building",
+                    "conteudo_id": conteudo_id,
+                    "task_id": task.id,
+                    "message": "Video sendo construido. Acompanhe em Aprovacoes.",
+                }
+            else:
+                import asyncio
+                from modules.video_engine.services.video_builder import build_all_formats
+
+                neg_data = _find_one(
+                    supabase.table("negocios").select("*").eq("id", body.negocio_id)
+                )
+                ws_data = _find_one(
+                    supabase.table("workspaces").select("*").eq("id", workspace_id)
+                )
+                if neg_data and ws_data:
+                    asyncio.create_task(build_all_formats(conteudo_id, neg_data, ws_data))
+                    logger.info(f"Build video disparado via asyncio (Redis indisponivel)")
+
+                return {
+                    "status": "building",
+                    "conteudo_id": conteudo_id,
+                    "message": "Video sendo construido. Acompanhe em Aprovacoes.",
+                }
+        except Exception as build_err:
+            logger.warning(f"Não foi possível disparar build automaticamente: {build_err}")
+            return {
+                "status": "created",
+                "conteudo_id": conteudo_id,
+                "message": "Conteudo criado. O video será gerado na próxima execução do pipeline.",
+            }
 
     except HTTPException:
         raise

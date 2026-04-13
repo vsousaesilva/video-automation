@@ -155,10 +155,13 @@ export default function ContentAI() {
       })
       setError('')
       setSentToVideo((prev) => new Set([...prev, contentId]))
+      const isBuilding = res.data.status === 'building'
       setVideoSuccess({
         contentId,
         conteudoId: res.data.conteudo_id,
         negocioNome: negocios.find((n) => n.id === negocioId)?.nome || 'Negocio',
+        isBuilding,
+        message: res.data.message,
       })
     } catch (err) {
       setError(err.response?.data?.detail || 'Erro ao enviar para Video Engine')
@@ -455,11 +458,16 @@ export default function ContentAI() {
                           </svg>
                           <div className="flex-1">
                             <p className="text-sm font-medium text-green-800">
-                              Conteudo enviado para "{videoSuccess.negocioNome}"
+                              {videoSuccess.isBuilding
+                                ? `Video sendo construido para "${videoSuccess.negocioNome}"`
+                                : `Conteudo enviado para "${videoSuccess.negocioNome}"`
+                              }
                             </p>
                             <p className="text-xs text-green-600 mt-1">
-                              O conteudo foi adicionado ao pipeline do negocio. Na proxima execucao do pipeline,
-                              sera gerado um video automaticamente. Voce pode acompanhar em:
+                              {videoSuccess.isBuilding
+                                ? 'O video esta sendo gerado agora (TTS, midia, renderizacao). Quando pronto, aparecera em Aprovacoes Pendentes. Isso pode levar alguns minutos.'
+                                : videoSuccess.message || 'O conteudo foi adicionado ao pipeline do negocio.'
+                              }
                             </p>
                             <div className="flex gap-3 mt-2">
                               <button
