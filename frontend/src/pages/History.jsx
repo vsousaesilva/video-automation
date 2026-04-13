@@ -15,8 +15,7 @@ const STATUS_STYLES = {
 
 const PIPELINE_STYLES = {
   gerado: { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Conteudo Gerado', icon: '1' },
-  processando_video: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Construindo Video', icon: '2' },
-  aguardando_aprovacao: { bg: 'bg-amber-100', text: 'text-amber-700', label: 'Aguardando Aprovacao', icon: '3' },
+  em_producao: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Construindo Video', icon: '2' },
   erro: { bg: 'bg-red-100', text: 'text-red-700', label: 'Erro', icon: '!' },
 }
 
@@ -40,13 +39,13 @@ export default function History() {
     }).catch(() => setLoading(false))
   }, [])
 
-  // Buscar conteudos em pipeline (gerado, processando_video, erro)
+  // Buscar conteudos em pipeline (gerado, em_producao, erro)
   useEffect(() => {
     setLoadingPipeline(true)
     api.get('/conteudos', { params: { limit: 50 } })
       .then(res => {
         const inPipeline = (res.data || []).filter(c =>
-          ['gerado', 'processando_video', 'erro'].includes(c.status)
+          ['gerado', 'em_producao', 'erro'].includes(c.status)
         )
         setPipeline(inPipeline)
       })
@@ -118,7 +117,7 @@ export default function History() {
                 <div key={conteudo.id} className="bg-white rounded-lg border border-gray-200 p-4 flex items-center gap-4">
                   {/* Step indicator */}
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${ps.bg} ${ps.text}`}>
-                    {conteudo.status === 'processando_video' ? (
+                    {conteudo.status === 'em_producao' ? (
                       <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
@@ -147,7 +146,7 @@ export default function History() {
                   </div>
 
                   {/* Action */}
-                  {conteudo.status === 'processando_video' && (
+                  {conteudo.status === 'em_producao' && (
                     <span className="text-xs text-blue-500">Gerando TTS, midia e video...</span>
                   )}
                   {conteudo.status === 'gerado' && (

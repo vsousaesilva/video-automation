@@ -79,7 +79,7 @@ async def generate_content(
 async def pipeline_status(
     current_user: dict = Depends(get_current_user),
 ):
-    """Mostra conteúdos em pipeline (gerado, processando_video, erro) com diagnóstico."""
+    """Mostra conteúdos em pipeline (gerado, em_producao, erro) com diagnóstico."""
     supabase = get_supabase()
     workspace_id = current_user["workspace_id"]
 
@@ -96,7 +96,7 @@ async def pipeline_status(
         supabase.table("conteudos")
         .select("*")
         .in_("negocio_id", neg_ids)
-        .in_("status", ["gerado", "processando_video", "erro"])
+        .in_("status", ["gerado", "em_producao", "erro"])
         .order("criado_em", desc=True)
         .limit(20)
         .execute()

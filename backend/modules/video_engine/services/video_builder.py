@@ -943,9 +943,9 @@ async def build_all_formats(
     if not roteiro:
         raise ValueError("Roteiro vazio no conteudo")
 
-    # Atualizar status do conteudo para processando_video
+    # Atualizar status do conteudo para em_producao (enum: gerado, em_producao, erro, concluido)
     supabase.table("conteudos").update(
-        {"status": "processando_video"}
+        {"status": "em_producao"}
     ).eq("id", content_id).execute()
 
     # 2. Gerar audio TTS
@@ -1069,9 +1069,9 @@ async def build_all_formats(
     video_result = supabase.table("videos").insert(video_data).execute()
     output.video_id = video_result.data[0]["id"]
 
-    # 8. Atualizar status do conteudo
+    # 8. Atualizar status do conteudo (enum: gerado, em_producao, erro, concluido)
     supabase.table("conteudos").update(
-        {"status": "aguardando_aprovacao"}
+        {"status": "concluido"}
     ).eq("id", content_id).execute()
 
     _log_etapa(app_id, output.video_id, "build_all_sucesso", "sucesso",
