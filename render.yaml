@@ -46,6 +46,12 @@ services:
         sync: false
       - key: REDIS_URL
         sync: false  # Upstash Redis (externo, free tier)
+      - key: ASAAS_API_KEY
+        sync: false
+      - key: ASAAS_BASE_URL
+        value: "https://api.asaas.com/v3"  # produção (não sandbox)
+      - key: ASAAS_WEBHOOK_TOKEN
+        sync: false
       - key: FRONTEND_URL
         value: "https://app.usinadotempo.com.br"
       - key: ENVIRONMENT

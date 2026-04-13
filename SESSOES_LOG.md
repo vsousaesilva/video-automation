@@ -323,3 +323,80 @@
   - Configurar pg_cron ou Celery Beat em produção para rotação de logs
 
 - **Proxima sessao:** Sessao 5 — Dashboard Unificado
+
+---
+
+## Sessao 5 — Dashboard Unificado
+- **Data:** 2026-04-13
+- **Status:** Concluida
+- **O que foi feito:**
+
+  **Backend — Modulo Dashboard (modules/dashboard/):**
+  - `modules/dashboard/__init__.py` — init do modulo
+  - `modules/dashboard/router.py` — 4 endpoints:
+    - `GET /dashboard/overview` — KPIs gerais (negocios ativos, videos gerados/publicados mes, aprovacoes pendentes, taxa aprovacao 30d, plano atual)
+    - `GET /dashboard/video-engine` — metricas detalhadas (videos por status, evolucao diaria 30d, top negocios por publicacoes)
+    - `GET /dashboard/usage` — consumo vs limites do plano (negocios, videos, conteudos, storage com barras de progresso)
+    - `GET /dashboard/timeline` — atividade recente cross-modulo via audit_log (ultimas N acoes com descricao humanizada)
+  - `modules/dashboard/services/__init__.py`
+  - `modules/dashboard/services/aggregator.py` — servico de agregacao com:
+    - Cache Redis (TTL 60s para KPIs, 30s para timeline) com fallback sem cache
+    - `get_overview()` — query otimizada para KPIs gerais
+    - `get_video_engine_metrics()` — metricas por status, evolucao 30d, top negocios
+    - `get_usage_vs_limits()` — consumo atual com percentuais vs limites do plano
+    - `get_timeline()` — audit_log com `_humanize_acao()` para textos legiveis
+
+  **Backend — Configuracao:**
+  - `main.py` — import dashboard router, versao 0.3.0, registrado dashboard_router.router
+
+  **Frontend — Dashboard Reescrito (Dashboard.jsx):**
+  - 4 cards KPI com icones: negocios ativos, videos gerados/publicados (mes), aprovacoes pendentes + taxa aprovacao
+  - Grafico de evolucao (Recharts AreaChart) — ultimos 14 dias, linhas gerados vs publicados com gradientes
+  - Painel de videos por status — breakdown com dots coloridos por status
+  - Widget de uso do plano — barras de progresso com cores por nivel (verde < 80%, amarelo >= 80%, vermelho >= 100%), link para gerenciar plano
+  - Timeline de atividade recente — lista scrollavel com timestamps formatados pt-BR
+  - Top negocios — ranking por videos publicados nos ultimos 30 dias
+  - Acoes rapidas — atalhos para criar negocio, revisar aprovacoes (com badge de pendentes), banco de midia, historico
+  - Aprovacoes pendentes — grid de cards com link para revisar (so aparece se houver pendentes)
+
+  **Frontend — dashboardStore.js:**
+  - Reescrito para consumir 4 novos endpoints do backend (/dashboard/overview, /video-engine, /usage, /timeline)
+  - Mantido fetchPendingVideos para badge no Layout
+  - fetchAll() executa todos os fetches em paralelo
+
+  **Frontend — Dependencia:**
+  - `recharts ^2.15.0` adicionado ao package.json para graficos
+
+- **Decisoes tomadas:**
+  - Aggregator com cache Redis + fallback sem cache (funciona em dev sem Redis)
+  - Queries otimizadas no backend (contagem via count="exact", filtros por data) em vez de N+1 no frontend
+  - Dashboard antigo fazia N+1 requests (1 por negocio para buscar historico); novo faz 5 requests paralelos independente do numero de negocios
+  - Recharts escolhido por ser leve, declarativo e compativel com React 19
+  - Grafico mostra 14 dias (nao 30) para melhor legibilidade visual
+  - Timeline consome audit_log (ja populado pelo AuditLogMiddleware da Sessao 4)
+  - Top negocios limitado a 5 para nao poluir o dashboard
+  - Cache TTL curto (60s KPIs, 30s timeline) para dados quase real-time
+
+- **Arquivos criados/modificados:**
+  ```
+  Criados:
+  - backend/modules/dashboard/__init__.py
+  - backend/modules/dashboard/router.py
+  - backend/modules/dashboard/services/__init__.py
+  - backend/modules/dashboard/services/aggregator.py
+
+  Modificados:
+  - backend/main.py (import dashboard, v0.3.0)
+  - frontend/src/pages/Dashboard.jsx (reescrito completo)
+  - frontend/src/stores/dashboardStore.js (reescrito para novos endpoints)
+  - frontend/package.json (adicionado recharts)
+  ```
+
+- **Pendencias:**
+  - Executar `npm install` no frontend para instalar recharts
+  - Testar dashboard com dados reais no Supabase
+  - Verificar que audit_log esta sendo populado pelo middleware (necessario para timeline)
+  - Testar cache Redis em producao
+  - Testar dashboard com plano Free (dados limitados/zerados)
+
+- **Proxima sessao:** Sessao 6 — Content AI

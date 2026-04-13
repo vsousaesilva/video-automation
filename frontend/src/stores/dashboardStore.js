@@ -1,77 +1,98 @@
 import { create } from 'zustand'
 import api from '../lib/api'
 
-const useDashboardStore = create((set) => ({
+const useDashboardStore = create((set, get) => ({
+  // Overview KPIs
+  overview: {
+    total_negocios: 0,
+    videos_gerados_mes: 0,
+    videos_publicados_mes: 0,
+    aprovacoes_pendentes: 0,
+    taxa_aprovacao_30d: 0,
+    plano_nome: 'Sem plano',
+    plano_status: 'inactive',
+  },
+
+  // Video Engine metrics
+  videoEngine: {
+    por_status: {},
+    evolucao_30d: [],
+    top_negocios: [],
+    total_30d: 0,
+  },
+
+  // Usage vs limits
+  usage: {
+    plano_nome: 'Sem plano',
+    plano_status: 'inactive',
+    trial_ends_at: null,
+    metrics: [],
+  },
+
+  // Timeline
+  timeline: [],
+
+  // Pending videos (mantido para badge no Layout)
   pendingVideos: [],
   pendingCount: 0,
-  schedule: [],
-  stats: { hoje: 0, semana: 0, mes: 0 },
+
   loading: false,
+  error: null,
+
+  fetchOverview: async () => {
+    try {
+      const res = await api.get('/dashboard/overview')
+      set({ overview: res.data })
+    } catch (err) {
+      console.error('Erro ao buscar overview:', err)
+    }
+  },
+
+  fetchVideoEngine: async () => {
+    try {
+      const res = await api.get('/dashboard/video-engine')
+      set({ videoEngine: res.data })
+    } catch (err) {
+      console.error('Erro ao buscar metricas video engine:', err)
+    }
+  },
+
+  fetchUsage: async () => {
+    try {
+      const res = await api.get('/dashboard/usage')
+      set({ usage: res.data })
+    } catch (err) {
+      console.error('Erro ao buscar uso do plano:', err)
+    }
+  },
+
+  fetchTimeline: async () => {
+    try {
+      const res = await api.get('/dashboard/timeline?limit=15')
+      set({ timeline: res.data })
+    } catch (err) {
+      console.error('Erro ao buscar timeline:', err)
+    }
+  },
 
   fetchPendingVideos: async () => {
     try {
       const res = await api.get('/videos/pending')
       set({ pendingVideos: res.data, pendingCount: res.data.length })
     } catch (err) {
-      console.error('Erro ao buscar vídeos pendentes:', err)
-    }
-  },
-
-  fetchSchedule: async () => {
-    try {
-      const res = await api.get('/negocios/schedule/today')
-      set({ schedule: res.data })
-    } catch (err) {
-      console.error('Erro ao buscar agenda do dia:', err)
-    }
-  },
-
-  fetchStats: async () => {
-    try {
-      const res = await api.get('/videos/pending')
-      const allVideos = res.data
-
-      // Buscar negocios para obter historico
-      const negociosRes = await api.get('/negocios')
-      const negocios = negociosRes.data
-
-      let hoje = 0, semana = 0, mes = 0
-      const now = new Date()
-      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-      const startOfWeek = new Date(startOfDay)
-      startOfWeek.setDate(startOfDay.getDate() - startOfDay.getDay())
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-
-      // Buscar historico de cada negocio para contar publicados
-      for (const negocio of negocios) {
-        try {
-          const histRes = await api.get(`/negocios/${negocio.id}/history`)
-          const videos = histRes.data || []
-          for (const v of videos) {
-            if (v.status !== 'publicado' || !v.publicado_em) continue
-            const pub = new Date(v.publicado_em)
-            if (pub >= startOfMonth) mes++
-            if (pub >= startOfWeek) semana++
-            if (pub >= startOfDay) hoje++
-          }
-        } catch {
-          // Negocio sem historico — ignorar
-        }
-      }
-
-      set({ stats: { hoje, semana, mes } })
-    } catch (err) {
-      console.error('Erro ao buscar estatísticas:', err)
+      console.error('Erro ao buscar videos pendentes:', err)
     }
   },
 
   fetchAll: async () => {
-    set({ loading: true })
+    set({ loading: true, error: null })
     const store = useDashboardStore.getState()
     await Promise.all([
+      store.fetchOverview(),
+      store.fetchVideoEngine(),
+      store.fetchUsage(),
+      store.fetchTimeline(),
       store.fetchPendingVideos(),
-      store.fetchSchedule(),
-      store.fetchStats(),
     ])
     set({ loading: false })
   },

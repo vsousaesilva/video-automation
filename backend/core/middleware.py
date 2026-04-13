@@ -117,6 +117,15 @@ class AuditLogMiddleware(BaseHTTPMiddleware):
         if not client_ip:
             client_ip = request.client.host if request.client else None
 
+        # Para ações sem token (login, signup, forgot_password), buscar workspace via email
+        if not workspace_id and action in ("login", "signup", "forgot_password"):
+            # Sem workspace_id não conseguimos inserir (coluna NOT NULL)
+            # Pular audit para ações pré-autenticação sem workspace
+            return
+
+        if not workspace_id:
+            return
+
         supabase = get_supabase()
         supabase.table("audit_log").insert({
             "workspace_id": workspace_id,
