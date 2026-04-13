@@ -148,6 +148,17 @@ export default function Contacts() {
     setShowModal(true)
   }
 
+  const handleDownloadTemplate = () => {
+    const header = 'nome,email,telefone,empresa,cargo,notas'
+    const blob = new Blob([header + '\n'], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'modelo_contatos.csv'
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
   const totalPages = Math.ceil(total / 25)
 
   return (
@@ -184,7 +195,12 @@ export default function Contacts() {
       {showImport && (
         <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
           <p className="text-sm text-blue-800 mb-2">Selecione um arquivo CSV com colunas: nome, email, telefone, empresa, cargo, notas</p>
-          <input type="file" accept=".csv,.xlsx,.xls" onChange={handleImport} disabled={importing} className="text-sm" />
+          <div className="flex items-center gap-3">
+            <input type="file" accept=".csv,.xlsx,.xls" onChange={handleImport} disabled={importing} className="text-sm" />
+            <button onClick={handleDownloadTemplate} className="px-3 py-1.5 text-sm border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-100 whitespace-nowrap">
+              Baixar modelo CSV
+            </button>
+          </div>
           {importing && <p className="text-sm text-blue-600 mt-2">Importando...</p>}
           {importResult && (
             <div className="mt-3 text-sm">
