@@ -32,15 +32,15 @@ FPS = 30
 FADE_DURATION = 0.3
 CTA_DURATION = 5
 
-# Formato vertical (Reels / Shorts)
-V_WIDTH = 1080
-V_HEIGHT = 1920
+# Formato vertical (Reels / Shorts) — 720p para performance no VPS
+V_WIDTH = 720
+V_HEIGHT = 1280
 V_MIN_DURATION = 30
 V_MAX_DURATION = 90
 
-# Formato horizontal (YouTube)
-H_WIDTH = 1920
-H_HEIGHT = 1080
+# Formato horizontal (YouTube) — 720p para performance no VPS
+H_WIDTH = 1280
+H_HEIGHT = 720
 H_MIN_DURATION = 60
 H_MAX_DURATION = 180
 
@@ -187,7 +187,7 @@ def _make_clip(media_path: str, duration: float) -> VideoFileClip | ImageClip:
         if clip.duration > duration:
             clip = clip.subclipped(0, duration)
         elif clip.duration < duration:
-            clip = clip.looped(duration=duration)
+            clip = clip.loop(duration=duration)
 
         return clip
     else:
@@ -476,12 +476,12 @@ async def build_vertical(
 
     final.write_videofile(
         output_path,
-        fps=FPS,
+        fps=24,
         codec="libx264",
         audio_codec="aac",
         audio_bitrate="128k",
-        preset="medium",
-        threads=4,
+        preset="ultrafast",
+        threads=2,
         logger="bar",
     )
 
@@ -539,7 +539,7 @@ def _make_clip_sized(
         if clip.duration > duration:
             clip = clip.subclipped(0, duration)
         elif clip.duration < duration:
-            clip = clip.looped(duration=duration)
+            clip = clip.loop(duration=duration)
 
         return clip
     else:
@@ -813,12 +813,12 @@ async def build_horizontal(
 
     final.write_videofile(
         output_path,
-        fps=FPS,
+        fps=24,
         codec="libx264",
         audio_codec="aac",
         audio_bitrate="128k",
-        preset="medium",
-        threads=4,
+        preset="ultrafast",
+        threads=2,
         logger="bar",
     )
 
