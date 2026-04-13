@@ -31,6 +31,12 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/content-ai", tags=["Content AI"])
 
 
+def _find_one(table_query):
+    """Executa query com .limit(1) e retorna o primeiro resultado ou None."""
+    result = table_query.limit(1).execute()
+    return result.data[0] if result.data else None
+
+
 # ============================================================
 # Geração de conteúdo
 # ============================================================
@@ -106,17 +112,15 @@ async def get_history_detail(
     supabase = get_supabase()
     workspace_id = current_user["workspace_id"]
 
-    result = (
+    item = _find_one(
         supabase.table("content_requests")
         .select("*, generated_contents(*)")
         .eq("id", request_id)
         .eq("workspace_id", workspace_id)
-        .single()
-        .execute()
     )
-    if not result.data:
+    if not item:
         raise HTTPException(status_code=404, detail="Geração não encontrada")
-    return result.data
+    return item
 
 
 # ============================================================
@@ -179,16 +183,13 @@ async def update_template(
     supabase = get_supabase()
     workspace_id = current_user["workspace_id"]
 
-    # Verificar propriedade
-    existing = (
+    existing = _find_one(
         supabase.table("content_templates")
         .select("id")
         .eq("id", template_id)
         .eq("workspace_id", workspace_id)
-        .single()
-        .execute()
     )
-    if not existing.data:
+    if not existing:
         raise HTTPException(status_code=404, detail="Template não encontrado")
 
     update_data = {k: v for k, v in body.model_dump(exclude_unset=True).items()}
@@ -212,15 +213,13 @@ async def delete_template(
     supabase = get_supabase()
     workspace_id = current_user["workspace_id"]
 
-    existing = (
+    existing = _find_one(
         supabase.table("content_templates")
         .select("id")
         .eq("id", template_id)
         .eq("workspace_id", workspace_id)
-        .single()
-        .execute()
     )
-    if not existing.data:
+    if not existing:
         raise HTTPException(status_code=404, detail="Template não encontrado")
 
     supabase.table("content_templates").update({"ativo": False}).eq("id", template_id).execute()
@@ -241,15 +240,13 @@ async def rate_content(
     supabase = get_supabase()
     workspace_id = current_user["workspace_id"]
 
-    existing = (
+    existing = _find_one(
         supabase.table("generated_contents")
         .select("id")
         .eq("id", content_id)
         .eq("workspace_id", workspace_id)
-        .single()
-        .execute()
     )
-    if not existing.data:
+    if not existing:
         raise HTTPException(status_code=404, detail="Conteúdo não encontrado")
 
     supabase.table("generated_contents").update({"avaliacao": body.avaliacao}).eq("id", content_id).execute()
@@ -265,51 +262,53 @@ async def use_in_video_engine(
     supabase = get_supabase()
     workspace_id = current_user["workspace_id"]
 
-    # Buscar conteúdo gerado
-    gen = (
-        supabase.table("generated_contents")
-        .select("*")
-        .eq("id", body.generated_content_id)
-        .eq("workspace_id", workspace_id)
-        .single()
-        .execute()
-    )
-    if not gen.data:
-        raise HTTPException(status_code=404, detail="Conteúdo gerado não encontrado")
+    try:
+        # Buscar conteúdo gerado
+        content = _find_one(
+            supabase.table("generated_contents")
+            .select("*")
+            .eq("id", body.generated_content_id)
+            .eq("workspace_id", workspace_id)
+        )
+        if not content:
+            raise HTTPException(status_code=404, detail="Conteúdo gerado não encontrado")
 
-    content = gen.data
-    metadata = content.get("metadata") or {}
+        metadata = content.get("metadata") or {}
 
-    # Verificar que o negócio pertence ao workspace
-    neg = (
-        supabase.table("negocios")
-        .select("id")
-        .eq("id", body.negocio_id)
-        .eq("workspace_id", workspace_id)
-        .single()
-        .execute()
-    )
-    if not neg.data:
-        raise HTTPException(status_code=404, detail="Negócio não encontrado")
+        # Verificar que o negócio pertence ao workspace
+        neg = _find_one(
+            supabase.table("negocios")
+            .select("id")
+            .eq("id", body.negocio_id)
+            .eq("workspace_id", workspace_id)
+        )
+        if not neg:
+            raise HTTPException(status_code=404, detail="Negócio não encontrado")
 
-    # Criar conteúdo na tabela conteudos (Video Engine)
-    conteudo_data = {
-        "negocio_id": body.negocio_id,
-        "tipo_conteudo": content.get("tipo", "roteiro"),
-        "roteiro": content.get("conteudo", ""),
-        "titulo": content.get("titulo", ""),
-        "descricao_youtube": metadata.get("meta_description", ""),
-        "descricao_instagram": content.get("conteudo", "")[:2200],
-        "hashtags_youtube": metadata.get("keywords", []),
-        "hashtags_instagram": metadata.get("hashtags", []),
-        "keywords_visuais": [],
-        "keywords_seo": metadata.get("keywords", []),
-        "status": "gerado",
-        "criado_em": datetime.now(timezone.utc).isoformat(),
-    }
-    result = supabase.table("conteudos").insert(conteudo_data).execute()
+        # Criar conteúdo na tabela conteudos (Video Engine)
+        conteudo_data = {
+            "negocio_id": body.negocio_id,
+            "tipo_conteudo": content.get("tipo", "roteiro"),
+            "roteiro": content.get("conteudo", ""),
+            "titulo": content.get("titulo", ""),
+            "descricao_youtube": metadata.get("meta_description", ""),
+            "descricao_instagram": content.get("conteudo", "")[:2200],
+            "hashtags_youtube": metadata.get("keywords", []),
+            "hashtags_instagram": metadata.get("hashtags", []),
+            "keywords_visuais": [],
+            "keywords_seo": metadata.get("keywords", []),
+            "status": "gerado",
+            "criado_em": datetime.now(timezone.utc).isoformat(),
+        }
+        result = supabase.table("conteudos").insert(conteudo_data).execute()
 
-    # Marcar conteúdo como usado
-    supabase.table("generated_contents").update({"usado_em": "video_engine"}).eq("id", body.generated_content_id).execute()
+        # Marcar conteúdo como usado
+        supabase.table("generated_contents").update({"usado_em": "video_engine"}).eq("id", body.generated_content_id).execute()
 
-    return {"status": "created", "conteudo_id": result.data[0]["id"]}
+        return {"status": "created", "conteudo_id": result.data[0]["id"]}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro ao enviar para Video Engine: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Erro ao enviar para Video Engine: {str(e)}")
