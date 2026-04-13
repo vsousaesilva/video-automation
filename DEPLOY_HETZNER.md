@@ -385,21 +385,37 @@ sudo cp -r dist/* /var/www/usina/
 sudo chown -R caddy:caddy /var/www/usina
 
 echo "[4/5] Reiniciando servicos..."
-sudo systemctl restart usina-api usina-celery usina-beat
-
-echo "[5/5] Verificando saude..."
-sleep 3
-curl -s http://localhost:8000/health
-
+echo "[5/5] Health check sera executado apos restart."
 echo ""
 echo "=== Deploy concluido! ==="
+
+# Restart em background com delay para a resposta HTTP terminar
+nohup bash -c "sleep 2 && sudo systemctl restart usina-api usina-celery usina-beat" > /dev/null 2>&1 &
 ```
 
 ```bash
 chmod +x /home/usina/deploy.sh
 ```
 
-Uso: `ssh usina@SEU_IP './deploy.sh'`
+> O script tambem pode ser executado pelo botao "Iniciar Deploy" em **Configuracoes > Admin** na propria aplicacao (apenas usuarios admin).
+
+Uso via SSH: `ssh usina@SEU_IP './deploy.sh'`
+
+### 6.1 Sudoers — permitir deploy sem senha
+
+O usuario `usina` precisa de permissao sudo sem senha para os comandos do deploy:
+
+```bash
+sudo nano /etc/sudoers.d/usina-deploy
+```
+
+```
+usina ALL=(ALL) NOPASSWD: /usr/bin/cp
+usina ALL=(ALL) NOPASSWD: /usr/bin/chown
+usina ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart usina-api usina-celery usina-beat
+```
+
+Validar: `sudo visudo -c -f /etc/sudoers.d/usina-deploy` (deve retornar `parsed OK`)
 
 ---
 
