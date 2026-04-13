@@ -141,6 +141,17 @@ export default function Signup() {
             />
           </div>
 
+          <p className="text-xs text-gray-500 mb-4">
+            Ao criar sua conta, voce concorda com os{' '}
+            <Link to="/termos" className="text-indigo-400 hover:text-indigo-300">
+              Termos de Uso
+            </Link>{' '}
+            e a{' '}
+            <Link to="/privacidade" className="text-indigo-400 hover:text-indigo-300">
+              Politica de Privacidade
+            </Link>.
+          </p>
+
           <button
             type="submit"
             disabled={loading}

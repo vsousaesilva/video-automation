@@ -124,6 +124,10 @@ class ResetPasswordRequest(BaseModel):
     nova_senha: str = Field(min_length=6)
 
 
+class VerifyEmailRequest(BaseModel):
+    code: str = Field(min_length=6, max_length=6)
+
+
 # === Billing ===
 
 class PlanResponse(BaseModel):

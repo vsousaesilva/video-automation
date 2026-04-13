@@ -1,13 +1,14 @@
 import logging
+import random
 import secrets
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
 
 from core.schemas import (
     LoginRequest, TokenResponse, RefreshRequest, AccessTokenResponse,
     InviteAccept, PasswordChangeRequest, SignupRequest,
-    ForgotPasswordRequest, ResetPasswordRequest,
+    ForgotPasswordRequest, ResetPasswordRequest, VerifyEmailRequest,
 )
 from core.auth import (
     verify_password,
@@ -19,6 +20,9 @@ from core.auth import (
 )
 from core.db import get_supabase
 from core.config import get_settings
+from core.rate_limit import (
+    limiter, check_login_lockout, record_failed_login, reset_login_attempts,
+)
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -27,7 +31,8 @@ router = APIRouter(prefix="/auth", tags=["Autenticação"])
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(body: LoginRequest):
+@limiter.limit("5/minute")
+async def login(request: Request, body: LoginRequest):
     supabase = get_supabase()
     result = supabase.table("users").select("*").eq("email", body.email).eq("ativo", True).execute()
 
@@ -36,11 +41,22 @@ async def login(body: LoginRequest):
 
     user = result.data[0]
 
+    # Brute-force protection: verificar lockout
+    if check_login_lockout(user):
+        raise HTTPException(
+            status_code=423,
+            detail="Conta temporariamente bloqueada por excesso de tentativas. Tente novamente em 15 minutos.",
+        )
+
     if not user.get("senha_hash"):
         raise HTTPException(status_code=401, detail="Usuário ainda não definiu senha. Aceite o convite primeiro.")
 
     if not verify_password(body.password, user["senha_hash"]):
+        record_failed_login(user["id"])
         raise HTTPException(status_code=401, detail="Credenciais inválidas")
+
+    # Login bem-sucedido: resetar contadores
+    reset_login_attempts(user["id"])
 
     token_data = {"sub": user["id"], "workspace_id": user["workspace_id"], "papel": user["papel"]}
     return TokenResponse(
@@ -119,7 +135,8 @@ async def accept_invite(body: InviteAccept):
 # === Signup público ===
 
 @router.post("/signup", response_model=TokenResponse, status_code=201)
-async def signup(body: SignupRequest):
+@limiter.limit("3/minute")
+async def signup(request: Request, body: SignupRequest):
     """Cria workspace + user admin + subscription trial. Retorna tokens para login automático."""
     supabase = get_supabase()
 
@@ -140,6 +157,10 @@ async def signup(body: SignupRequest):
     ws_result = supabase.table("workspaces").insert(ws_data).execute()
     workspace = ws_result.data[0]
 
+    # Gerar código de verificação de email
+    verification_code = f"{random.randint(0, 999999):06d}"
+    verification_expires = (datetime.now(timezone.utc) + timedelta(hours=24)).isoformat()
+
     # Criar user admin
     user_data = {
         "workspace_id": workspace["id"],
@@ -148,9 +169,31 @@ async def signup(body: SignupRequest):
         "senha_hash": hash_password(body.senha),
         "papel": "admin",
         "ativo": True,
+        "email_verified": False,
+        "email_verification_code": verification_code,
+        "email_verification_expires_at": verification_expires,
     }
     user_result = supabase.table("users").insert(user_data).execute()
     user = user_result.data[0]
+
+    # Enviar email de verificação
+    try:
+        import resend
+        resend.api_key = settings.resend_api_key
+        if settings.resend_api_key:
+            resend.Emails.send({
+                "from": "Usina do Tempo <noreply@usinadotempo.com.br>",
+                "to": [body.email],
+                "subject": "Verifique seu e-mail — Usina do Tempo",
+                "html": f"""
+                    <h2>Bem-vindo à Usina do Tempo, {body.nome}!</h2>
+                    <p>Seu código de verificação é:</p>
+                    <h1 style="text-align:center;font-size:36px;letter-spacing:8px;color:#4F46E5;">{verification_code}</h1>
+                    <p>Este código expira em 24 horas.</p>
+                """,
+            })
+    except Exception as e:
+        logger.warning(f"Erro ao enviar email de verificação: {e}")
 
     # Buscar plano free para subscription trial
     plan_result = supabase.table("plans").select("id").eq("slug", "starter").execute()
@@ -255,3 +298,70 @@ async def reset_password(body: ResetPasswordRequest):
     }).eq("id", user["id"]).execute()
 
     return {"detail": "Senha redefinida com sucesso. Faça login com sua nova senha."}
+
+
+# === Verificação de email ===
+
+@router.post("/verify-email")
+async def verify_email(body: VerifyEmailRequest, current_user: dict = Depends(get_current_user)):
+    """Verifica o email do usuário com código de 6 dígitos."""
+    supabase = get_supabase()
+
+    if current_user.get("email_verified"):
+        return {"detail": "E-mail já verificado."}
+
+    stored_code = current_user.get("email_verification_code")
+    expires_at = current_user.get("email_verification_expires_at")
+
+    if not stored_code or stored_code != body.code:
+        raise HTTPException(status_code=400, detail="Código de verificação inválido.")
+
+    if expires_at:
+        exp = datetime.fromisoformat(str(expires_at).replace("Z", "+00:00"))
+        if datetime.now(timezone.utc) > exp:
+            raise HTTPException(status_code=400, detail="Código expirado. Solicite um novo.")
+
+    supabase.table("users").update({
+        "email_verified": True,
+        "email_verification_code": None,
+        "email_verification_expires_at": None,
+    }).eq("id", current_user["id"]).execute()
+
+    return {"detail": "E-mail verificado com sucesso."}
+
+
+@router.post("/resend-verification")
+@limiter.limit("2/minute")
+async def resend_verification(request: Request, current_user: dict = Depends(get_current_user)):
+    """Reenvia o código de verificação de email."""
+    if current_user.get("email_verified"):
+        return {"detail": "E-mail já verificado."}
+
+    supabase = get_supabase()
+    verification_code = f"{random.randint(0, 999999):06d}"
+    verification_expires = (datetime.now(timezone.utc) + timedelta(hours=24)).isoformat()
+
+    supabase.table("users").update({
+        "email_verification_code": verification_code,
+        "email_verification_expires_at": verification_expires,
+    }).eq("id", current_user["id"]).execute()
+
+    try:
+        import resend
+        resend.api_key = settings.resend_api_key
+        if settings.resend_api_key:
+            resend.Emails.send({
+                "from": "Usina do Tempo <noreply@usinadotempo.com.br>",
+                "to": [current_user["email"]],
+                "subject": "Código de verificação — Usina do Tempo",
+                "html": f"""
+                    <h2>Olá, {current_user['nome']}!</h2>
+                    <p>Seu novo código de verificação é:</p>
+                    <h1 style="text-align:center;font-size:36px;letter-spacing:8px;color:#4F46E5;">{verification_code}</h1>
+                    <p>Este código expira em 24 horas.</p>
+                """,
+            })
+    except Exception as e:
+        logger.warning(f"Erro ao reenviar email de verificação: {e}")
+
+    return {"detail": "Código de verificação reenviado."}

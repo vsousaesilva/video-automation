@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 import httpx
 
 from core.config import get_settings
+from core.crypto import decrypt_value
 from core.db import get_supabase
 
 logger = logging.getLogger(__name__)
@@ -39,9 +40,11 @@ def _get_instagram_credentials(workspace: dict) -> tuple[str, str]:
     """
     settings = get_settings()
 
+    # Descriptografa token se armazenado criptografado no banco
+    ws_token = workspace.get("meta_access_token_enc") or workspace.get("meta_access_token")
     access_token = (
-        workspace.get("meta_access_token")
-        or settings.meta_access_token
+        decrypt_value(ws_token) if ws_token
+        else settings.meta_access_token
     )
     ig_account_id = (
         workspace.get("meta_instagram_account_id")

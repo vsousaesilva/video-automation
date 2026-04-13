@@ -419,15 +419,18 @@ async def retry_publish_instagram(
 def get_settings_check(workspace: dict) -> dict:
     """Verifica se as credenciais do YouTube e Instagram estao configuradas."""
     from core.config import get_settings
+    from core.crypto import decrypt_value
     settings = get_settings()
 
-    # YouTube
+    # YouTube (suporta campo criptografado _enc ou legado plain)
     client_id = settings.youtube_client_id
     client_secret = settings.youtube_client_secret
-    refresh_token = workspace.get("youtube_refresh_token") or settings.youtube_refresh_token
+    ws_yt_token = workspace.get("youtube_refresh_token_enc") or workspace.get("youtube_refresh_token")
+    refresh_token = decrypt_value(ws_yt_token) if ws_yt_token else settings.youtube_refresh_token
 
-    # Instagram
-    meta_token = workspace.get("meta_access_token") or settings.meta_access_token
+    # Instagram (suporta campo criptografado _enc ou legado plain)
+    ws_meta_token = workspace.get("meta_access_token_enc") or workspace.get("meta_access_token")
+    meta_token = decrypt_value(ws_meta_token) if ws_meta_token else settings.meta_access_token
     ig_account = workspace.get("meta_instagram_account_id") or settings.meta_instagram_account_id
 
     return {

@@ -2,6 +2,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useEffect } from 'react'
 import useAuthStore from '../stores/authStore'
 import useDashboardStore from '../stores/dashboardStore'
+import BillingBanner from './BillingBanner'
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: DashboardIcon },
@@ -85,8 +86,11 @@ export default function Layout() {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto">
-        <Outlet />
+      <main className="flex-1 overflow-auto flex flex-col">
+        <BillingBanner />
+        <div className="flex-1 overflow-auto">
+          <Outlet />
+        </div>
       </main>
     </div>
   )

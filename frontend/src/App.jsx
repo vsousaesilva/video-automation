@@ -14,6 +14,8 @@ import History from './pages/History'
 import Settings from './pages/Settings'
 import MediaBank from './pages/MediaBank'
 import Billing from './pages/Billing'
+import TermosDeUso from './pages/TermosDeUso'
+import PoliticaPrivacidade from './pages/PoliticaPrivacidade'
 
 export default function App() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
@@ -37,6 +39,8 @@ export default function App() {
         path="/reset-password"
         element={<ResetPassword />}
       />
+      <Route path="/termos" element={<TermosDeUso />} />
+      <Route path="/privacidade" element={<PoliticaPrivacidade />} />
 
       {/* Onboarding (authenticated but no layout) */}
       <Route

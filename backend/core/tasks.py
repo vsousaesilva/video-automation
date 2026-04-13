@@ -39,9 +39,18 @@ celery_app.conf.update(
 
     # Default queue
     task_default_queue="default",
+
+    # Beat schedule (tarefas periódicas)
+    beat_schedule={
+        "rotate-execution-logs-daily": {
+            "task": "core.maintenance.rotate_logs_task",
+            "schedule": 86400.0,  # 24h
+        },
+    },
 )
 
 # Autodiscover tasks em todos os módulos
 celery_app.autodiscover_tasks([
     "modules.video_engine",
+    "core",
 ])

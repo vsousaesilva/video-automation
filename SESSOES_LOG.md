@@ -172,3 +172,154 @@
   - Testar fallback: parar Redis e verificar que asyncio assume
 
 - **Proxima sessao:** Sessao 4 — Segurança, Auditoria e Hardening
+
+---
+
+## Sessao 4 — Segurança, Auditoria e Hardening
+- **Data:** 2026-04-12
+- **Status:** Concluida
+- **O que foi feito:**
+
+  **Migration (011_security_hardening.sql):**
+  - Campos brute-force: `login_attempts`, `locked_until` na tabela users
+  - Campos verificação de email: `email_verified`, `email_verification_code`, `email_verification_expires_at`
+  - Campos LGPD: `deletion_requested_at`, `deletion_scheduled_for` na tabela workspaces
+  - Índices adicionais para audit_log (user_id, acao, recurso)
+  - Índice para brute-force lookup (users.email + ativo)
+  - Funções SQL `rotate_execution_logs(dias)` e `rotate_audit_logs(dias)`
+  - RLS habilitado em audit_log com policy de isolamento por workspace
+  - Users existentes marcados como email_verified=true
+
+  **Backend — Rate Limiting (core/rate_limit.py):**
+  - SlowAPI integrado com identificador por workspace_id (autenticado) ou IP (anônimo)
+  - Storage via Redis em produção, memória em desenvolvimento
+  - Login: 5 req/min por IP
+  - Signup: 3 req/min por IP
+  - API geral: 60 req/min por workspace (default)
+  - Reenvio de verificação: 2 req/min
+  - Handler customizado para 429 com mensagem em português
+
+  **Backend — Brute-force Protection (core/rate_limit.py):**
+  - `check_login_lockout()` — verifica se conta está bloqueada
+  - `record_failed_login()` — incrementa tentativas, bloqueia após 5 falhas por 15 min
+  - `reset_login_attempts()` — reseta contadores após login bem-sucedido
+  - Integrado no endpoint POST /auth/login
+
+  **Backend — CORS Restritivo (main.py):**
+  - Dev: permite apenas `frontend_url` (localhost:5173)
+  - Produção: whitelist de `app.usinadotempo.com.br`, `usinadotempo.com.br`, `www.usinadotempo.com.br`
+  - `allow_methods` e `allow_headers` explícitos (não mais `*`)
+
+  **Backend — Security Headers Middleware (core/middleware.py):**
+  - `X-Content-Type-Options: nosniff`
+  - `X-Frame-Options: DENY`
+  - `X-XSS-Protection: 1; mode=block`
+  - `Referrer-Policy: strict-origin-when-cross-origin`
+  - `Permissions-Policy: camera=(), microphone=(), geolocation=()`
+  - Produção: `Strict-Transport-Security` (HSTS) + `Content-Security-Policy`
+
+  **Backend — Audit Log Middleware (core/middleware.py):**
+  - Middleware intercepta requests e registra ações sensíveis na tabela audit_log
+  - Ações rastreadas: login, signup, forgot_password, reset_password, change_password, create_negocio, delete_negocio, trigger_pipeline, publish_video, approve_video, billing_checkout, billing_cancel, invite_user, remove_user, export_data, delete_data_request
+  - Registra: user_id, workspace_id, IP, user_agent, status code
+
+  **Backend — Billing Enforcement Middleware (core/middleware.py):**
+  - Verifica limites do plano antes de executar ações que consomem recursos
+  - POST /pipeline/trigger → verifica videos_gerados vs max_videos_mes
+  - POST /negocios → verifica contagem de negócios vs max_negocios
+  - Retorna 429 com mensagem clara quando limite atingido
+
+  **Backend — Criptografia de Credenciais (core/crypto.py):**
+  - Fernet (AES-128-CBC) para criptografar tokens de APIs externas
+  - Chave derivada do secret_key via PBKDF2 (100k iterações)
+  - `encrypt_value()` / `decrypt_value()` prontas para uso nos services
+
+  **Backend — LGPD Endpoints (routers/privacy.py):**
+  - `GET /privacy/my-data` — exporta todos os dados do workspace em JSON (Art. 18 LGPD)
+  - `DELETE /privacy/my-data` — agenda exclusão para 30 dias (carência para cancelamento)
+  - `POST /privacy/cancel-deletion` — cancela solicitação de exclusão pendente
+
+  **Backend — Rotação de Logs (core/maintenance.py):**
+  - Task Celery `rotate_logs_task` executada diariamente via beat_schedule
+  - Remove execution_logs > 90 dias via função SQL
+  - Remove audit_logs > 365 dias via função SQL
+  - Processa exclusões LGPD agendadas (anonimiza workspaces após 30 dias)
+
+  **Backend — Verificação de Email:**
+  - Signup gera código de 6 dígitos e envia via Resend
+  - `POST /auth/verify-email` — verifica código
+  - `POST /auth/resend-verification` — reenvia código (rate limited: 2/min)
+  - Schema `VerifyEmailRequest` adicionado
+
+  **Backend — Configuração:**
+  - `requirements.txt` — adicionados `slowapi`, `cryptography`, `bcrypt`
+  - `core/config.py` — adicionados `flower_user`, `flower_password`, `log_level`
+  - `core/tasks.py` — beat_schedule para rotação diária, autodiscover de `core`
+  - `main.py` — versão 0.2.0, middlewares registrados, privacy router incluído
+
+  **Frontend — Páginas Públicas:**
+  - `pages/TermosDeUso.jsx` — Termos de Uso completos (10 seções)
+  - `pages/PoliticaPrivacidade.jsx` — Política de Privacidade LGPD (10 seções)
+  - Rotas `/termos` e `/privacidade` adicionadas ao App.jsx
+
+  **Frontend — Billing Banner:**
+  - `components/BillingBanner.jsx` — banner contextual no topo do layout
+  - Banner vermelho para pagamento pendente (past_due)
+  - Banner laranja para assinatura cancelada/expirada
+  - Banner amarelo para trial expirando (< 3 dias)
+  - Banner azul para uso próximo do limite (>= 80%)
+  - Banner vermelho para limite atingido (100%)
+  - Todos com botão de dismiss e link para billing
+  - Integrado no Layout.jsx acima do Outlet
+
+  **Frontend — Links de Compliance:**
+  - Login.jsx — links para Termos e Privacidade no footer
+  - Signup.jsx — texto de consentimento com links antes do botão de cadastro
+
+- **Decisoes tomadas:**
+  - SlowAPI com storage Redis em prod, memória em dev (evita dependência Redis em dev)
+  - Brute-force no banco (não em Redis) para persistir entre restarts do servidor
+  - Fernet com chave derivada do secret_key (não requer nova variável de ambiente)
+  - LGPD com carência de 30 dias antes da anonimização (evita exclusão acidental)
+  - Audit log via middleware (não decorators) para capturar tudo sem modificar cada endpoint
+  - Billing enforcement via middleware para bloquear antes do handler processar
+  - Verificação de email não bloqueia o uso (pode usar sem verificar, mas é incentivado)
+
+- **Arquivos criados/modificados:**
+  ```
+  Criados:
+  - backend/migrations/011_security_hardening.sql
+  - backend/core/middleware.py (SecurityHeaders, AuditLog, BillingEnforcement)
+  - backend/core/crypto.py (Fernet encrypt/decrypt)
+  - backend/core/rate_limit.py (SlowAPI + brute-force)
+  - backend/core/maintenance.py (rotação de logs Celery task)
+  - backend/routers/privacy.py (LGPD endpoints)
+  - frontend/src/pages/TermosDeUso.jsx
+  - frontend/src/pages/PoliticaPrivacidade.jsx
+  - frontend/src/components/BillingBanner.jsx
+
+  Modificados:
+  - backend/main.py (CORS restritivo, middlewares, privacy router, v0.2.0)
+  - backend/core/config.py (novos campos)
+  - backend/core/schemas.py (VerifyEmailRequest)
+  - backend/core/tasks.py (beat_schedule, autodiscover core)
+  - backend/routers/auth.py (brute-force, rate limit, email verification)
+  - backend/requirements.txt (slowapi, cryptography, bcrypt)
+  - frontend/src/App.jsx (rotas /termos, /privacidade)
+  - frontend/src/components/Layout.jsx (BillingBanner)
+  - frontend/src/pages/Login.jsx (links Termos/Privacidade)
+  - frontend/src/pages/Signup.jsx (consentimento Termos/Privacidade)
+  ```
+
+- **Pendencias:**
+  - Executar migration 011 no Supabase
+  - Configurar `SECRET_KEY` forte em produção (obrigatório para Fernet)
+  - Testar rate limiting com Redis em produção
+  - Testar brute-force: 5 tentativas → lockout → desbloqueio após 15 min
+  - Testar CORS: requisição de domínio não autorizado deve ser rejeitada
+  - Testar billing enforcement: criar vídeo além do limite → 429
+  - Testar export de dados LGPD (GET /privacy/my-data)
+  - Integrar `encrypt_value`/`decrypt_value` nos services que salvam tokens de APIs externas
+  - Configurar pg_cron ou Celery Beat em produção para rotação de logs
+
+- **Proxima sessao:** Sessao 5 — Dashboard Unificado

@@ -40,11 +40,16 @@ class Settings(BaseSettings):
     # Redis / Celery
     redis_url: str = "redis://localhost:6379/0"
 
+    # Flower (monitoramento Celery)
+    flower_user: str = ""
+    flower_password: str = ""
+
     # App
     frontend_url: str = "http://localhost:5173"
     secret_key: str = "insecure-dev-key-change-me"
     environment: str = "development"
     base_url: str = "http://localhost:8000"
+    log_level: str = "INFO"
 
     model_config = {
         "env_file": ".env",

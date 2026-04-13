@@ -16,6 +16,7 @@ from googleapiclient.http import MediaFileUpload
 from googleapiclient.errors import HttpError
 
 from core.config import get_settings
+from core.crypto import decrypt_value
 from core.db import get_supabase
 
 logger = logging.getLogger(__name__)
@@ -42,8 +43,9 @@ def _get_youtube_credentials(workspace: dict) -> Credentials:
     client_id = settings.youtube_client_id
     client_secret = settings.youtube_client_secret
 
-    # Refresh token por workspace tem prioridade
-    refresh_token = workspace.get("youtube_refresh_token") or settings.youtube_refresh_token
+    # Refresh token por workspace tem prioridade (descriptografa se armazenado criptografado)
+    ws_token = workspace.get("youtube_refresh_token_enc") or workspace.get("youtube_refresh_token")
+    refresh_token = decrypt_value(ws_token) if ws_token else settings.youtube_refresh_token
 
     if not all([client_id, client_secret, refresh_token]):
         raise ValueError(
