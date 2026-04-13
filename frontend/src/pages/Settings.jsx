@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import api from '../lib/api'
 import useAuthStore from '../stores/authStore'
 import MediaUploader from '../components/MediaUploader'
@@ -8,6 +8,7 @@ const TABS = [
   { key: 'workspace', label: 'Workspace' },
   { key: 'users', label: 'Usuários' },
   { key: 'media', label: 'Banco Global' },
+  { key: 'admin', label: 'Admin', adminOnly: true },
 ]
 
 const PAPEIS = [
@@ -28,7 +29,7 @@ export default function Settings() {
       {/* Tabs */}
       <div className="border-b border-gray-200 mb-6">
         <div className="flex gap-6">
-          {TABS.map(t => (
+          {TABS.filter(t => !t.adminOnly || isAdmin).map(t => (
             <button key={t.key} onClick={() => setTab(t.key)}
               className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
                 tab === t.key ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -43,6 +44,7 @@ export default function Settings() {
       {tab === 'workspace' && <WorkspaceSettings isAdmin={isAdmin} />}
       {tab === 'users' && <UsersSettings isAdmin={isAdmin} />}
       {tab === 'media' && <MediaUploader negocioId={null} />}
+      {tab === 'admin' && isAdmin && <AdminSettings />}
     </div>
   )
 }
@@ -432,6 +434,87 @@ function UsersSettings({ isAdmin }) {
           </tbody>
         </table>
       </div>
+    </div>
+  )
+}
+
+function AdminSettings() {
+  const [deploying, setDeploying] = useState(false)
+  const [log, setLog] = useState('')
+  const [done, setDone] = useState(false)
+  const logRef = useRef(null)
+
+  const handleDeploy = async () => {
+    if (!confirm('Iniciar deploy? Isso vai atualizar o código, rebuildar o frontend e reiniciar os serviços.')) return
+
+    setDeploying(true)
+    setLog('')
+    setDone(false)
+
+    try {
+      const token = localStorage.getItem('access_token')
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+      const res = await fetch(`${baseUrl}/admin/deploy`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+
+      while (true) {
+        const { done: streamDone, value } = await reader.read()
+        if (streamDone) break
+        const text = decoder.decode(value, { stream: true })
+        setLog(prev => prev + text)
+      }
+    } catch (err) {
+      setLog(prev => prev + `\nErro: ${err.message}\n`)
+    }
+
+    setDeploying(false)
+    setDone(true)
+  }
+
+  useEffect(() => {
+    if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight
+  }, [log])
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">Deploy da aplicação</h3>
+        <p className="text-sm text-gray-500 mb-5">
+          Puxa as últimas alterações do GitHub, rebuilda o frontend e reinicia os serviços do backend.
+        </p>
+
+        <button onClick={handleDeploy} disabled={deploying}
+          className={`px-6 py-2.5 text-white text-sm font-medium rounded-lg transition-colors ${
+            deploying
+              ? 'bg-amber-500 cursor-wait'
+              : 'bg-indigo-600 hover:bg-indigo-700'
+          }`}>
+          {deploying ? 'Deploy em andamento...' : 'Iniciar Deploy'}
+        </button>
+
+        {done && (
+          <span className={`ml-3 text-sm font-medium ${
+            log.includes('Exit code: 0') ? 'text-green-600' : 'text-red-600'
+          }`}>
+            {log.includes('Exit code: 0') ? 'Deploy concluído com sucesso!' : 'Deploy falhou — verifique o log.'}
+          </span>
+        )}
+      </div>
+
+      {log && (
+        <div className="bg-gray-900 rounded-xl p-4 overflow-hidden">
+          <div className="flex items-center gap-2 mb-3">
+            <div className={`w-2 h-2 rounded-full ${deploying ? 'bg-amber-400 animate-pulse' : log.includes('Exit code: 0') ? 'bg-green-400' : 'bg-red-400'}`} />
+            <span className="text-xs text-gray-400 font-mono">deploy.sh</span>
+          </div>
+          <pre ref={logRef} className="text-sm text-green-400 font-mono whitespace-pre-wrap max-h-96 overflow-y-auto">{log}</pre>
+        </div>
+      )}
     </div>
   )
 }

@@ -14,7 +14,7 @@ from core.middleware import (
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
-from routers import auth, workspaces, users, billing, tasks, privacy
+from routers import admin, auth, workspaces, users, billing, tasks, privacy
 from modules.video_engine.routers import (
     negocios,
     media,
@@ -79,6 +79,7 @@ app.add_middleware(
 )
 
 # === Routers ===
+app.include_router(admin.router)
 app.include_router(auth.router)
 app.include_router(workspaces.router)
 app.include_router(users.router)
