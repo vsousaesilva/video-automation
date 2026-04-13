@@ -510,3 +510,113 @@
   - Verificar que audit_log registra geracoes
 
 - **Proxima sessao:** Sessao 7 — CRM
+
+---
+
+## Sessao 7 — CRM
+- **Data:** 2026-04-13
+- **Status:** Concluida
+- **O que foi feito:**
+
+  **Migration (013_crm.sql):**
+  - Tabela `deal_stages` — etapas do funil personalizaveis (nome, posicao, cor) com RLS
+  - Tabela `contacts` — contatos com nome, email, telefone, empresa, cargo, origem, notas, dados_extras JSONB
+  - Tabela `contact_tags` — tags com nome e cor (unique por workspace)
+  - Tabela `contacts_tags` — juncao N:N contato <-> tag
+  - Tabela `deals` — oportunidades com titulo, valor_centavos, status (aberto/ganho/perdido), stage_id, contact_id, responsavel_id, posicao_kanban
+  - Tabela `activities` — atividades (nota, email, ligacao, reuniao, tarefa) vinculadas a contato e/ou deal
+  - Indices otimizados por workspace_id, email, nome, criado_em, stage_id, contact_id
+  - RLS habilitado em todas as tabelas com policy de isolamento por workspace
+  - Seed: 6 etapas padrao do funil para workspaces existentes (Novo Lead, Qualificado, Proposta, Negociacao, Ganho, Perdido)
+
+  **Backend — Modulo CRM (modules/crm/):**
+  - `schemas.py` — enums OrigemContato (6), TipoAtividade (5), StatusDeal (3); schemas de request/response para contacts, tags, stages, deals, activities, import
+  - `router.py` — 24 endpoints:
+    - CRUD de contatos (`GET/POST/PUT/DELETE /crm/contacts`, `GET /crm/contacts/{id}`)
+    - Importacao CSV (`POST /crm/contacts/import`)
+    - CRUD de tags (`GET/POST/PUT/DELETE /crm/tags`)
+    - CRUD de etapas do funil (`GET/POST/PUT/DELETE /crm/stages`)
+    - CRUD de deals (`GET/POST/PUT/DELETE /crm/deals`, `PUT /crm/deals/{id}/move`)
+    - CRUD de atividades (`GET/POST/PUT/DELETE /crm/activities`)
+  - `services/importer.py` — importacao de contatos via CSV/Excel:
+    - Mapeamento flexivel de colunas (nome/name, email/e-mail, phone/telefone, etc.)
+    - Suporte a CSV (utf-8-sig para BOM do Excel) e Excel (openpyxl)
+    - Incremento automatico de contatos_crm no billing
+    - Retorno detalhado de erros por linha
+
+  **Backend — Integracao:**
+  - `main.py` — import crm router, versao 0.5.0, registrado crm_router.router
+  - `core/middleware.py` — billing enforcement para `POST /crm/contacts` (verifica contatos vs max_contatos_crm)
+  - `core/middleware.py` — audit log para create_contact, delete_contact, import_contacts, create_deal, update_deal, delete_deal
+
+  **Frontend — Pagina Contatos (Contacts.jsx):**
+  - Tabela de contatos com busca (nome, email, empresa, telefone), filtro por tag, paginacao
+  - Modal de criar/editar contato (nome, email, telefone, empresa, cargo, origem, tags, notas)
+  - Importacao CSV com preview de resultado (criados/erros/detalhes)
+  - Gerenciamento de tags (criar com cor, remover)
+  - Soft-delete (desativar) contatos
+  - Click na linha navega para detalhe do contato
+
+  **Frontend — Detalhe do Contato (ContactDetail.jsx):**
+  - Card com informacoes do contato (nome, cargo, email, telefone, empresa, tags, notas)
+  - Timeline de atividades com icones por tipo (nota, email, ligacao, reuniao, tarefa)
+  - Criar nova atividade (tipo, titulo, descricao)
+  - Toggle concluida para tarefas
+  - Remover atividade com confirmacao
+  - Lista de deals/oportunidades vinculados ao contato
+
+  **Frontend — Funil de Vendas (Funnel.jsx):**
+  - Board kanban com colunas por etapa do funil
+  - Drag-and-drop nativo (HTML5 DnD) para mover deals entre etapas
+  - Cards com titulo, valor, contato associado
+  - Totalizador por etapa e total do pipeline
+  - Filtro por status (aberto/ganho/perdido)
+  - Marcar deal como ganho/perdido direto do card
+  - Modal de criar/editar deal (titulo, valor, etapa, contato, notas)
+  - Atividade automatica registrada ao mover deal
+
+  **Frontend — Navegacao:**
+  - `App.jsx` — rotas `/crm`, `/crm/contacts/:id`, `/crm/funnel`
+  - `Layout.jsx` — links "Contatos" e "Funil" no sidebar com icones
+
+- **Decisoes tomadas:**
+  - Soft-delete para contatos (ativo=false) para preservar historico de deals e atividades
+  - Tags N:N com tabela de juncao (flexivel, sem limite de tags por contato)
+  - Stages personalizaveis por workspace (seed com 6 padrao)
+  - Deals com posicao_kanban para ordenacao dentro da etapa
+  - Atividade automatica ao mover deal (rastreabilidade)
+  - Importacao CSV com mapeamento flexivel de colunas (aceita ingles e portugues)
+  - Billing enforcement via middleware (max_contatos_crm no plano)
+  - Drag-and-drop nativo HTML5 (sem dependencia extra como react-beautiful-dnd)
+
+- **Arquivos criados/modificados:**
+  ```
+  Criados:
+  - backend/migrations/013_crm.sql
+  - backend/modules/crm/__init__.py
+  - backend/modules/crm/schemas.py
+  - backend/modules/crm/router.py
+  - backend/modules/crm/services/__init__.py
+  - backend/modules/crm/services/importer.py
+  - frontend/src/pages/Contacts.jsx
+  - frontend/src/pages/ContactDetail.jsx
+  - frontend/src/pages/Funnel.jsx
+
+  Modificados:
+  - backend/main.py (import crm, v0.5.0)
+  - backend/core/middleware.py (billing + audit para CRM)
+  - frontend/src/App.jsx (rotas /crm, /crm/contacts/:id, /crm/funnel)
+  - frontend/src/components/Layout.jsx (nav links Contatos + Funil)
+  ```
+
+- **Pendencias:**
+  - Executar migration 013 no Supabase
+  - Testar CRUD de contatos (criar, editar, buscar, desativar)
+  - Testar importacao CSV (com e sem erros)
+  - Testar funil kanban (drag-and-drop entre etapas)
+  - Testar timeline de atividades (criar nota, email, ligacao, reuniao, tarefa)
+  - Testar billing enforcement (limite de contatos por plano)
+  - Testar RLS (contatos isolados entre workspaces)
+  - Instalar openpyxl se quiser suporte a Excel: `pip install openpyxl`
+
+- **Proxima sessao:** Sessao 8 — Ads Manager (Meta Ads)

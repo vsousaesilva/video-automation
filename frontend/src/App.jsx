@@ -15,6 +15,9 @@ import Settings from './pages/Settings'
 import MediaBank from './pages/MediaBank'
 import Billing from './pages/Billing'
 import ContentAI from './pages/ContentAI'
+import Contacts from './pages/Contacts'
+import ContactDetail from './pages/ContactDetail'
+import Funnel from './pages/Funnel'
 import TermosDeUso from './pages/TermosDeUso'
 import PoliticaPrivacidade from './pages/PoliticaPrivacidade'
 
@@ -67,6 +70,9 @@ export default function App() {
         <Route path="media" element={<MediaBank />} />
         <Route path="history" element={<History />} />
         <Route path="content-ai" element={<ContentAI />} />
+        <Route path="crm" element={<Contacts />} />
+        <Route path="crm/contacts/:id" element={<ContactDetail />} />
+        <Route path="crm/funnel" element={<Funnel />} />
         <Route path="settings" element={<Settings />} />
         <Route path="settings/billing" element={<Billing />} />
       </Route>

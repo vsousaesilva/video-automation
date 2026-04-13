@@ -67,6 +67,12 @@ AUDIT_ROUTES = {
     ("DELETE", "/privacy/my-data"): "delete_data_request",
     ("POST", "/content-ai/generate"): "generate_content_ai",
     ("POST", "/content-ai/use-in-video"): "content_ai_to_video",
+    ("POST", "/crm/contacts"): "create_contact",
+    ("DELETE", "/crm/contacts"): "delete_contact",
+    ("POST", "/crm/contacts/import"): "import_contacts",
+    ("POST", "/crm/deals"): "create_deal",
+    ("PUT", "/crm/deals"): "update_deal",
+    ("DELETE", "/crm/deals"): "delete_deal",
 }
 
 
@@ -149,6 +155,7 @@ BILLING_CHECKS = {
     ("POST", "/pipeline/trigger"): ("videos_gerados", "max_videos_mes"),
     ("POST", "/negocios"): ("_count_negocios", "max_negocios"),
     ("POST", "/content-ai/generate"): ("conteudos_gerados", "max_conteudos_mes"),
+    ("POST", "/crm/contacts"): ("_count_contacts", "max_contatos_crm"),
 }
 
 
@@ -213,6 +220,17 @@ class BillingEnforcementMiddleware(BaseHTTPMiddleware):
                 supabase.table("negocios")
                 .select("id", count="exact")
                 .eq("workspace_id", workspace_id)
+                .execute()
+            )
+            current = result.count or 0
+        elif usage_field == "_count_contacts":
+            from core.db import get_supabase
+            supabase = get_supabase()
+            result = (
+                supabase.table("contacts")
+                .select("id", count="exact")
+                .eq("workspace_id", workspace_id)
+                .eq("ativo", True)
                 .execute()
             )
             current = result.count or 0
