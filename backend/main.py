@@ -1,9 +1,10 @@
 import logging
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
+from core.auth import get_current_user
 from core.config import get_settings
 from core.rate_limit import limiter, rate_limit_exceeded_handler
 from core.middleware import (
@@ -102,3 +103,84 @@ app.include_router(content_ai_router.router)
 @app.get("/health")
 async def health_check():
     return {"status": "ok", "version": "0.4.0"}
+
+
+@app.get("/debug/my-context")
+async def debug_my_context(
+    current_user: dict = Depends(get_current_user),
+):
+    """Endpoint de diagnóstico — mostra user, workspace, negocios, conteudos e videos."""
+    from core.db import get_supabase
+
+    supabase = get_supabase()
+    user_id = current_user["id"]
+    workspace_id = current_user.get("workspace_id")
+
+    # Negocios do workspace
+    negocios = []
+    neg_ids = []
+    if workspace_id:
+        neg_result = (
+            supabase.table("negocios")
+            .select("id, nome, status, workspace_id")
+            .eq("workspace_id", workspace_id)
+            .execute()
+        )
+        negocios = neg_result.data or []
+        neg_ids = [n["id"] for n in negocios]
+
+    # Conteudos dos negocios
+    conteudos = []
+    if neg_ids:
+        cont_result = (
+            supabase.table("conteudos")
+            .select("id, negocio_id, tipo_conteudo, status, erro_msg, criado_em")
+            .in_("negocio_id", neg_ids)
+            .order("criado_em", desc=True)
+            .limit(20)
+            .execute()
+        )
+        conteudos = cont_result.data or []
+
+    # Videos dos negocios
+    videos = []
+    if neg_ids:
+        vid_result = (
+            supabase.table("videos")
+            .select("id, negocio_id, conteudo_id, status, criado_em")
+            .in_("negocio_id", neg_ids)
+            .order("criado_em", desc=True)
+            .limit(20)
+            .execute()
+        )
+        videos = vid_result.data or []
+
+    # Contadores por status
+    conteudos_por_status = {}
+    for c in conteudos:
+        s = c.get("status", "?")
+        conteudos_por_status[s] = conteudos_por_status.get(s, 0) + 1
+
+    videos_por_status = {}
+    for v in videos:
+        s = v.get("status", "?")
+        videos_por_status[s] = videos_por_status.get(s, 0) + 1
+
+    return {
+        "user": {
+            "id": user_id,
+            "workspace_id": workspace_id,
+            "papel": current_user.get("papel"),
+            "nome": current_user.get("nome"),
+        },
+        "negocios": negocios,
+        "conteudos": conteudos,
+        "videos": videos,
+        "resumo": {
+            "total_negocios": len(negocios),
+            "total_conteudos": len(conteudos),
+            "total_videos": len(videos),
+            "conteudos_por_status": conteudos_por_status,
+            "videos_por_status": videos_por_status,
+        },
+    }
