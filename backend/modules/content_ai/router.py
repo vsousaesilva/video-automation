@@ -72,6 +72,63 @@ async def generate_content(
 
 
 # ============================================================
+# Diagnóstico — status do pipeline de vídeo
+# ============================================================
+
+@router.get("/pipeline-status")
+async def pipeline_status(
+    current_user: dict = Depends(get_current_user),
+):
+    """Mostra conteúdos em pipeline (gerado, processando_video, erro) com diagnóstico."""
+    supabase = get_supabase()
+    workspace_id = current_user["workspace_id"]
+
+    # Buscar todos negócios do workspace
+    negs = supabase.table("negocios").select("id, nome").eq("workspace_id", workspace_id).execute()
+    neg_ids = [n["id"] for n in (negs.data or [])]
+    neg_names = {n["id"]: n["nome"] for n in (negs.data or [])}
+
+    if not neg_ids:
+        return {"items": [], "diagnostico": "Nenhum negocio encontrado"}
+
+    # Buscar conteúdos em pipeline
+    conteudos = (
+        supabase.table("conteudos")
+        .select("*")
+        .in_("negocio_id", neg_ids)
+        .in_("status", ["gerado", "processando_video", "erro"])
+        .order("criado_em", desc=True)
+        .limit(20)
+        .execute()
+    )
+
+    items = []
+    for c in (conteudos.data or []):
+        items.append({
+            "id": c["id"],
+            "negocio": neg_names.get(c["negocio_id"], c["negocio_id"]),
+            "titulo": c.get("titulo"),
+            "tipo": c.get("tipo_conteudo"),
+            "status": c["status"],
+            "erro": c.get("erro_msg"),
+            "criado_em": c.get("criado_em"),
+        })
+
+    # Checar Redis
+    try:
+        from modules.video_engine.routers.pipeline import _celery_available
+        redis_ok = _celery_available()
+    except Exception:
+        redis_ok = False
+
+    return {
+        "items": items,
+        "redis_disponivel": redis_ok,
+        "total_em_pipeline": len(items),
+    }
+
+
+# ============================================================
 # Histórico
 # ============================================================
 
@@ -344,13 +401,26 @@ async def use_in_video_engine(
                     supabase.table("workspaces").select("*").eq("id", workspace_id)
                 )
                 if neg_data and ws_data:
-                    asyncio.create_task(build_all_formats(conteudo_id, neg_data, ws_data))
+                    async def _build_with_error_handling():
+                        try:
+                            await build_all_formats(conteudo_id, neg_data, ws_data)
+                        except Exception as e:
+                            logger.error(f"Build video falhou (asyncio): {e}", exc_info=True)
+                            try:
+                                get_supabase().table("conteudos").update({
+                                    "status": "erro",
+                                    "erro_msg": str(e),
+                                }).eq("id", conteudo_id).execute()
+                            except Exception:
+                                pass
+
+                    asyncio.create_task(_build_with_error_handling())
                     logger.info(f"Build video disparado via asyncio (Redis indisponivel)")
 
                 return {
                     "status": "building",
                     "conteudo_id": conteudo_id,
-                    "message": "Video sendo construido. Acompanhe em Aprovacoes.",
+                    "message": "Video sendo construido. Acompanhe em Historico.",
                 }
         except Exception as build_err:
             logger.warning(f"Não foi possível disparar build automaticamente: {build_err}")
