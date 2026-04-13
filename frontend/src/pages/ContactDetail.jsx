@@ -7,8 +7,8 @@ const API = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 const TIPO_LABELS = {
   nota: 'Nota',
   email: 'Email',
-  ligacao: 'Ligacao',
-  reuniao: 'Reuniao',
+  ligacao: 'Liga\u00e7\u00e3o',
+  reuniao: 'Reuni\u00e3o',
   tarefa: 'Tarefa',
 }
 
@@ -225,7 +225,7 @@ export default function ContactDetail() {
                           <span className="text-xs font-medium text-gray-500 uppercase">{TIPO_LABELS[a.tipo] || a.tipo}</span>
                           {a.tipo === 'tarefa' && (
                             <button onClick={() => handleToggleActivity(a)} className={`text-xs px-2 py-0.5 rounded ${a.concluida ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
-                              {a.concluida ? 'Concluida' : 'Pendente'}
+                              {a.concluida ? 'Conclu\u00edda' : 'Pendente'}
                             </button>
                           )}
                         </div>
@@ -269,11 +269,11 @@ export default function ContactDetail() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Titulo</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">T\u00edtulo</label>
                 <input type="text" value={activityForm.titulo} onChange={e => setActivityForm({ ...activityForm, titulo: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="Resumo da atividade" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Descricao</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Descri\u00e7\u00e3o</label>
                 <textarea value={activityForm.descricao} onChange={e => setActivityForm({ ...activityForm, descricao: e.target.value })} rows={4} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="Detalhes..." />
               </div>
             </div>

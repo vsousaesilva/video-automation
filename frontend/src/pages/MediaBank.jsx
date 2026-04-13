@@ -85,10 +85,10 @@ export default function MediaBank() {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Banco de Midia</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Banco de Mídia</h1>
         <select value={selectedNegocioId} onChange={e => setSelectedNegocioId(e.target.value)}
           className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-          <option value="all">Todos os negocios</option>
+          <option value="all">Todos os negócios</option>
           {negocios.map(n => (
             <option key={n.id} value={n.id}>{n.nome}</option>
           ))}
@@ -108,13 +108,13 @@ export default function MediaBank() {
       <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
         <h2 className="text-sm font-semibold text-gray-700 mb-3">Enviar Arquivos</h2>
         {selectedNegocioId === 'all' && (
-          <p className="text-xs text-amber-600 mb-3">Selecione um negocio acima para associar os arquivos a ele.</p>
+          <p className="text-xs text-amber-600 mb-3">Selecione um negócio acima para associar os arquivos a ele.</p>
         )}
         <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-end">
           <div className="flex-1">
             <label className="block text-xs text-gray-500 mb-1">Tags (separadas por virgula, opcional)</label>
             <input type="text" value={tags} onChange={e => setTags(e.target.value)}
-              placeholder="produto, logo, cenario..."
+              placeholder="produto, logo, cenário..."
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
           </div>
           <div>
@@ -150,8 +150,8 @@ export default function MediaBank() {
           <svg className="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
-          <p>Nenhuma midia cadastrada.</p>
-          <p className="text-sm mt-1">Envie imagens ou videos usando o botao acima.</p>
+          <p>Nenhuma mídia cadastrada.</p>
+          <p className="text-sm mt-1">Envie imagens ou vídeos usando o botão acima.</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
@@ -167,7 +167,7 @@ export default function MediaBank() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <span className="text-xs mt-1">Video</span>
+                    <span className="text-xs mt-1">Vídeo</span>
                   </div>
                 )}
               </div>
@@ -213,7 +213,7 @@ export default function MediaBank() {
       {/* Stats */}
       {!loading && media.length > 0 && (
         <div className="mt-4 text-xs text-gray-400 text-right">
-          {media.length} arquivo(s) &middot; {media.filter(m => m.tipo === 'imagem').length} imagens &middot; {media.filter(m => m.tipo === 'video').length} videos
+          {media.length} arquivo(s) &middot; {media.filter(m => m.tipo === 'imagem').length} imagens &middot; {media.filter(m => m.tipo === 'video').length} vídeos
         </div>
       )}
     </div>

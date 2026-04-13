@@ -199,14 +199,18 @@ export default function Contacts() {
       {/* Import section */}
       {showImport && (
         <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <p className="text-sm text-blue-800 mb-2">Selecione um arquivo CSV com colunas: nome, email, telefone, empresa, cargo, notas</p>
+          <p className="text-sm text-blue-800 mb-3">Selecione um arquivo CSV com colunas: nome, email, telefone, empresa, cargo, notas</p>
           <div className="flex items-center gap-3">
-            <input type="file" accept=".csv,.xlsx,.xls" onChange={handleImport} disabled={importing} className="text-sm" />
-            <button onClick={handleDownloadTemplate} className="px-3 py-1.5 text-sm border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-100 whitespace-nowrap">
+            <label className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg cursor-pointer transition-colors ${importing ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+              {importing ? 'Importando...' : 'Selecionar arquivo'}
+              <input type="file" accept=".csv,.xlsx,.xls" onChange={handleImport} disabled={importing} className="hidden" />
+            </label>
+            <button onClick={handleDownloadTemplate} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-100">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
               Baixar modelo CSV
             </button>
           </div>
-          {importing && <p className="text-sm text-blue-600 mt-2">Importando...</p>}
           {importResult && (
             <div className="mt-3 text-sm">
               <p className="text-green-700">Criados: {importResult.criados} de {importResult.total}</p>
@@ -251,7 +255,7 @@ export default function Contacts() {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Empresa</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tags</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Origem</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acoes</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">A\u00e7\u00f5es</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -288,8 +292,8 @@ export default function Contacts() {
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2 mt-4">
           <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1 text-sm border rounded disabled:opacity-40">Anterior</button>
-          <span className="text-sm text-gray-600">Pagina {page} de {totalPages}</span>
-          <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="px-3 py-1 text-sm border rounded disabled:opacity-40">Proxima</button>
+          <span className="text-sm text-gray-600">P\u00e1gina {page} de {totalPages}</span>
+          <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="px-3 py-1 text-sm border rounded disabled:opacity-40">Pr\u00f3xima</button>
         </div>
       )}
 
@@ -328,9 +332,9 @@ export default function Contacts() {
                 <select value={form.origem} onChange={e => setForm({ ...form, origem: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm">
                   <option value="manual">Manual</option>
                   <option value="site">Site</option>
-                  <option value="indicacao">Indicacao</option>
+                  <option value="indicacao">Indica\u00e7\u00e3o</option>
                   <option value="linkedin">LinkedIn</option>
-                  <option value="importacao">Importacao</option>
+                  <option value="importacao">Importa\u00e7\u00e3o</option>
                   <option value="outro">Outro</option>
                 </select>
               </div>
@@ -374,7 +378,7 @@ export default function Contacts() {
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
             <h2 className="text-lg font-bold mb-4">Gerenciar Tags</h2>
             <div className="space-y-2 mb-4 max-h-60 overflow-y-auto">
-              {tags.length === 0 && <p className="text-sm text-gray-400">Nenhuma tag criada</p>}
+              {tags.length === 0 && <p className="text-sm text-gray-400">Nenhuma tag criada ainda</p>}
               {tags.map(t => (
                 <div key={t.id} className="flex items-center justify-between p-2 rounded border">
                   <div className="flex items-center gap-2">

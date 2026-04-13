@@ -31,7 +31,7 @@ export default function ForgotPassword() {
           <p className="text-gray-400 mt-2">
             {sent
               ? 'Verifique seu e-mail'
-              : 'Informe seu e-mail para receber o link de recuperacao'}
+              : 'Informe seu e-mail para receber o link de recuperação'}
           </p>
         </div>
 
@@ -43,7 +43,7 @@ export default function ForgotPassword() {
               </svg>
             </div>
             <p className="text-gray-300 mb-4">
-              Se o e-mail estiver cadastrado, voce recebera um link para redefinir sua senha.
+              Se o e-mail estiver cadastrado, você receberá um link para redefinir sua senha.
             </p>
             <Link to="/login" className="text-indigo-400 hover:text-indigo-300 text-sm">
               Voltar para o login
@@ -78,7 +78,7 @@ export default function ForgotPassword() {
               disabled={loading}
               className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-800 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors"
             >
-              {loading ? 'Enviando...' : 'Enviar link de recuperacao'}
+              {loading ? 'Enviando...' : 'Enviar link de recuperação'}
             </button>
 
             <p className="text-center text-gray-400 text-sm mt-4">

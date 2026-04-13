@@ -146,7 +146,7 @@ export default function Dashboard() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            Visao geral do workspace &middot; Plano <span className="font-medium">{overview.plano_nome}</span>
+            Visão geral do workspace &middot; Plano <span className="font-medium">{overview.plano_nome}</span>
           </p>
         </div>
         {loading && (
@@ -163,30 +163,30 @@ export default function Dashboard() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard
-          label="Negocios ativos"
+          label="Negócios ativos"
           value={overview.total_negocios}
           icon={<NegociosIcon />}
           color="text-indigo-600"
           bgIcon="bg-indigo-100"
         />
         <KpiCard
-          label="Videos gerados (mes)"
+          label="Vídeos gerados (mês)"
           value={overview.videos_gerados_mes}
           icon={<VideoIcon />}
           color="text-blue-600"
           bgIcon="bg-blue-100"
         />
         <KpiCard
-          label="Videos publicados (mes)"
+          label="Vídeos publicados (mês)"
           value={overview.videos_publicados_mes}
           icon={<PublishIcon />}
           color="text-emerald-600"
           bgIcon="bg-emerald-100"
         />
         <KpiCard
-          label="Aguardando aprovacao"
+          label="Aguardando aprovação"
           value={overview.aprovacoes_pendentes}
-          subtitle={`Taxa de aprovacao: ${overview.taxa_aprovacao_30d}%`}
+          subtitle={`Taxa de aprovação: ${overview.taxa_aprovacao_30d}%`}
           icon={<ApprovalIcon />}
           color={overview.aprovacoes_pendentes > 0 ? 'text-amber-600' : 'text-gray-600'}
           bgIcon={overview.aprovacoes_pendentes > 0 ? 'bg-amber-100' : 'bg-gray-100'}
@@ -197,7 +197,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Grafico */}
         <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Evolucao — Ultimos 14 dias</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Evolução — Últimos 14 dias</h2>
           {chartData.length > 0 ? (
             <ResponsiveContainer width="100%" height={260}>
               <AreaChart data={chartData}>
@@ -227,7 +227,7 @@ export default function Dashboard() {
             </ResponsiveContainer>
           ) : (
             <div className="flex items-center justify-center h-[260px] text-gray-400 text-sm">
-              Sem dados de video nos ultimos 14 dias.
+              Sem dados de vídeo nos últimos 14 dias.
             </div>
           )}
           <div className="flex gap-6 mt-3 text-xs text-gray-500">
@@ -242,8 +242,8 @@ export default function Dashboard() {
 
         {/* Status breakdown */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Videos por Status</h2>
-          <p className="text-xs text-gray-400 mb-3">Ultimos 30 dias &middot; {videoEngine.total_30d} videos</p>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Vídeos por Status</h2>
+          <p className="text-xs text-gray-400 mb-3">Últimos 30 dias &middot; {videoEngine.total_30d} vídeos</p>
           {statusEntries.length > 0 ? (
             <div className="space-y-3">
               {statusEntries.map(([status, count]) => (
@@ -251,7 +251,7 @@ export default function Dashboard() {
               ))}
             </div>
           ) : (
-            <p className="text-sm text-gray-400 text-center py-8">Nenhum video no periodo.</p>
+            <p className="text-sm text-gray-400 text-center py-8">Nenhum vídeo no período.</p>
           )}
         </div>
       </div>
@@ -301,8 +301,8 @@ export default function Dashboard() {
         <div className="space-y-6">
           {/* Top negocios */}
           <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Top Negocios</h2>
-            <p className="text-xs text-gray-400 mb-3">Por videos publicados (30d)</p>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Top Negócios</h2>
+            <p className="text-xs text-gray-400 mb-3">Por vídeos publicados (30d)</p>
             {(videoEngine.top_negocios || []).length > 0 ? (
               <div className="space-y-2.5">
                 {videoEngine.top_negocios.map((n, i) => (
@@ -316,25 +316,25 @@ export default function Dashboard() {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-gray-400 text-center py-4">Nenhuma publicacao no periodo.</p>
+              <p className="text-sm text-gray-400 text-center py-4">Nenhuma publicação no período.</p>
             )}
           </div>
 
           {/* Atalhos rapidos */}
           <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Acoes Rapidas</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Ações Rápidas</h2>
             <div className="space-y-2">
               <Link
                 to="/negocios"
                 className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors"
               >
-                <PlusIcon /> Criar negocio
+                <PlusIcon /> Criar negócio
               </Link>
               <Link
                 to="/approvals"
                 className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors"
               >
-                <CheckIcon /> Revisar aprovacoes
+                <CheckIcon /> Revisar aprovações
                 {overview.aprovacoes_pendentes > 0 && (
                   <span className="ml-auto bg-amber-100 text-amber-700 text-xs font-bold px-2 py-0.5 rounded-full">
                     {overview.aprovacoes_pendentes}
@@ -345,13 +345,13 @@ export default function Dashboard() {
                 to="/media"
                 className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors"
               >
-                <MediaIcon /> Banco de midia
+                <MediaIcon /> Banco de mídia
               </Link>
               <Link
                 to="/history"
                 className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors"
               >
-                <HistoryIcon /> Ver historico
+                <HistoryIcon /> Ver histórico
               </Link>
             </div>
           </div>
@@ -362,7 +362,7 @@ export default function Dashboard() {
       {displayPending.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Aprovacoes Pendentes</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Aprovações Pendentes</h2>
             <Link
               to="/approvals"
               className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"

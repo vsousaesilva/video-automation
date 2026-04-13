@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import api from '../lib/api'
 
 const TIPOS = [
-  { value: 'copy_ads', label: 'Copy para Anuncios', desc: 'Meta Ads, Google Ads, TikTok Ads' },
+  { value: 'copy_ads', label: 'Copy para Anúncios', desc: 'Meta Ads, Google Ads, TikTok Ads' },
   { value: 'legenda', label: 'Legenda Social', desc: 'Instagram, LinkedIn, Facebook' },
-  { value: 'roteiro', label: 'Roteiro de Video', desc: 'Videos curtos de marketing' },
-  { value: 'artigo', label: 'Artigo para Blog', desc: 'Conteudo SEO otimizado' },
-  { value: 'resposta_comentario', label: 'Resposta a Comentario', desc: 'Atendimento em redes sociais' },
+  { value: 'roteiro', label: 'Roteiro de Vídeo', desc: 'Vídeos curtos de marketing' },
+  { value: 'artigo', label: 'Artigo para Blog', desc: 'Conteúdo SEO otimizado' },
+  { value: 'resposta_comentario', label: 'Resposta a Comentário', desc: 'Atendimento em redes sociais' },
   { value: 'email_marketing', label: 'Email Marketing', desc: 'Campanhas de email' },
 ]
 
@@ -19,7 +19,7 @@ const TONS = [
   { value: 'inspirador', label: 'Inspirador' },
   { value: 'educativo', label: 'Educativo' },
   { value: 'persuasivo', label: 'Persuasivo' },
-  { value: 'tecnico', label: 'Tecnico' },
+  { value: 'tecnico', label: 'Técnico' },
 ]
 
 const PLATAFORMAS = [
@@ -125,7 +125,7 @@ export default function ContentAI() {
       const res = await api.post('/content-ai/generate', body)
       setResult(res.data)
     } catch (err) {
-      setError(err.response?.data?.detail || 'Erro ao gerar conteudo')
+      setError(err.response?.data?.detail || 'Erro ao gerar conteúdo')
     } finally {
       setGenerating(false)
     }
@@ -145,7 +145,7 @@ export default function ContentAI() {
 
   async function handleUseInVideo(contentId) {
     if (!negocioId) {
-      setError('Selecione um negocio para enviar ao Video Engine')
+      setError('Selecione um negócio para enviar ao Vídeo Engine')
       return
     }
     try {
@@ -159,12 +159,12 @@ export default function ContentAI() {
       setVideoSuccess({
         contentId,
         conteudoId: res.data.conteudo_id,
-        negocioNome: negocios.find((n) => n.id === negocioId)?.nome || 'Negocio',
+        negocioNome: negocios.find((n) => n.id === negocioId)?.nome || 'Negócio',
         isBuilding,
         message: res.data.message,
       })
     } catch (err) {
-      setError(err.response?.data?.detail || 'Erro ao enviar para Video Engine')
+      setError(err.response?.data?.detail || 'Erro ao enviar para Vídeo Engine')
     }
   }
 
@@ -191,7 +191,7 @@ export default function ContentAI() {
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Content AI</h1>
-      <p className="text-gray-500 mb-6">Gere conteudo com inteligencia artificial para multiplos formatos</p>
+      <p className="text-gray-500 mb-6">Gere conteúdo com inteligência artificial para múltiplos formatos</p>
 
       {/* Tabs */}
       <div className="flex gap-1 mb-6 border-b">
@@ -205,7 +205,7 @@ export default function ContentAI() {
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            {t === 'gerar' ? 'Gerar Conteudo' : t === 'historico' ? 'Historico' : 'Templates'}
+            {t === 'gerar' ? 'Gerar Conteúdo' : t === 'historico' ? 'Histórico' : 'Templates'}
           </button>
         ))}
       </div>
@@ -221,7 +221,7 @@ export default function ContentAI() {
           <form onSubmit={handleGenerate} className="space-y-4">
             {/* Tipo de conteudo */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Conteudo</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Conteúdo</label>
               <div className="grid grid-cols-2 gap-2">
                 {TIPOS.map((t) => (
                   <button
@@ -257,13 +257,13 @@ export default function ContentAI() {
 
             {/* Negocio */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Negocio (opcional)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Negócio (opcional)</label>
               <select
                 value={negocioId}
                 onChange={(e) => setNegocioId(e.target.value)}
                 className="w-full border rounded-lg px-3 py-2 text-sm"
               >
-                <option value="">Nenhum (generico)</option>
+                <option value="">Nenhum (genérico)</option>
                 {negocios.map((n) => (
                   <option key={n.id} value={n.id}>{n.nome}</option>
                 ))}
@@ -306,12 +306,12 @@ export default function ContentAI() {
 
             {/* Instrucoes */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Instrucoes adicionais</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Instruções adicionais</label>
               <textarea
                 value={promptUsuario}
                 onChange={(e) => setPromptUsuario(e.target.value)}
                 rows={3}
-                placeholder="Ex: Foque em urgencia, mencione desconto de 30%, use linguagem jovem..."
+                placeholder="Ex: Foque em urgência, mencione desconto de 30%, use linguagem jovem..."
                 className="w-full border rounded-lg px-3 py-2 text-sm"
                 maxLength={2000}
               />
@@ -320,7 +320,7 @@ export default function ContentAI() {
             {/* Quantidade */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Variacoes: {quantidade}
+                Variações: {quantidade}
               </label>
               <input
                 type="range"
@@ -349,7 +349,7 @@ export default function ContentAI() {
                   Gerando...
                 </span>
               ) : (
-                'Gerar Conteudo'
+                'Gerar Conteúdo'
               )}
             </button>
           </form>
@@ -358,7 +358,7 @@ export default function ContentAI() {
           <div>
             {!result && !generating && (
               <div className="flex items-center justify-center h-64 border-2 border-dashed border-gray-200 rounded-lg">
-                <p className="text-gray-400 text-sm">O conteudo gerado aparecera aqui</p>
+                <p className="text-gray-400 text-sm">O conteúdo gerado aparecerá aqui</p>
               </div>
             )}
 
@@ -369,7 +369,7 @@ export default function ContentAI() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
-                  <p className="text-indigo-600 text-sm font-medium">Gerando conteudo com IA...</p>
+                  <p className="text-indigo-600 text-sm font-medium">Gerando conteúdo com IA...</p>
                   <p className="text-indigo-400 text-xs mt-1">Isso pode levar alguns segundos</p>
                 </div>
               </div>
@@ -379,7 +379,7 @@ export default function ContentAI() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="font-medium text-gray-900">
-                    {result.contents.length} conteudo{result.contents.length > 1 ? 's' : ''} gerado{result.contents.length > 1 ? 's' : ''}
+                    {result.contents.length} conteúdo{result.contents.length > 1 ? 's' : ''} gerado{result.contents.length > 1 ? 's' : ''}
                   </h3>
                   <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full">
                     {result.status}
@@ -424,12 +424,12 @@ export default function ContentAI() {
                           onClick={() => handleUseInVideo(content.id)}
                           className="text-xs text-indigo-600 hover:text-indigo-800 px-2 py-1 rounded hover:bg-indigo-50 transition-colors"
                         >
-                          Usar no Video Engine
+                          Usar no Vídeo Engine
                         </button>
                       )}
                       {sentToVideo.has(content.id) && (
                         <span className="text-xs text-green-600 px-2 py-1">
-                          Enviado ao Video Engine
+                          Enviado ao Vídeo Engine
                         </span>
                       )}
                       <div className="ml-auto flex gap-1">
@@ -459,14 +459,14 @@ export default function ContentAI() {
                           <div className="flex-1">
                             <p className="text-sm font-medium text-green-800">
                               {videoSuccess.isBuilding
-                                ? `Video sendo construido para "${videoSuccess.negocioNome}"`
-                                : `Conteudo enviado para "${videoSuccess.negocioNome}"`
+                                ? `Vídeo sendo construído para "${videoSuccess.negocioNome}"`
+                                : `Conteúdo enviado para "${videoSuccess.negocioNome}"`
                               }
                             </p>
                             <p className="text-xs text-green-600 mt-1">
                               {videoSuccess.isBuilding
-                                ? 'O video esta sendo gerado agora (TTS, midia, renderizacao). Quando pronto, aparecera em Aprovacoes Pendentes. Isso pode levar alguns minutos.'
-                                : videoSuccess.message || 'O conteudo foi adicionado ao pipeline do negocio.'
+                                ? 'O vídeo está sendo gerado agora (TTS, mídia, renderização). Quando pronto, aparecerá em Aprovações Pendentes. Isso pode levar alguns minutos.'
+                                : videoSuccess.message || 'O conteúdo foi adicionado ao pipeline do negócio.'
                               }
                             </p>
                             <div className="flex gap-3 mt-2">
@@ -474,13 +474,13 @@ export default function ContentAI() {
                                 onClick={() => navigate('/history')}
                                 className="text-xs font-medium text-green-700 hover:text-green-900 underline"
                               >
-                                Historico de Videos
+                                Histórico de Vídeos
                               </button>
                               <button
                                 onClick={() => navigate('/approvals')}
                                 className="text-xs font-medium text-green-700 hover:text-green-900 underline"
                               >
-                                Aprovacoes Pendentes
+                                Aprovações Pendentes
                               </button>
                               <button
                                 onClick={() => setVideoSuccess(null)}
@@ -521,9 +521,9 @@ export default function ContentAI() {
             <div className="text-center py-12 text-gray-400">Carregando...</div>
           ) : history.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-gray-400">Nenhuma geracao encontrada</p>
+              <p className="text-gray-400">Nenhuma geração encontrada</p>
               <button onClick={() => setTab('gerar')} className="text-indigo-600 text-sm mt-2 hover:underline">
-                Gerar primeiro conteudo
+                Gerar primeiro conteúdo
               </button>
             </div>
           ) : (
@@ -599,7 +599,7 @@ export default function ContentAI() {
       {tab === 'templates' && (
         <div>
           <div className="flex items-center justify-between mb-4">
-            <p className="text-sm text-gray-500">Templates de prompts reutilizaveis</p>
+            <p className="text-sm text-gray-500">Templates de prompts reutilizáveis</p>
             <button
               onClick={() => setShowTemplateForm(true)}
               className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 transition-colors"
@@ -620,7 +620,7 @@ export default function ContentAI() {
                     onChange={(e) => setTplForm({ ...tplForm, nome: e.target.value })}
                     required
                     className="w-full border rounded px-3 py-2 text-sm"
-                    placeholder="Ex: Copy urgencia Black Friday"
+                    placeholder="Ex: Copy urgência Black Friday"
                   />
                 </div>
                 <div>
@@ -638,7 +638,7 @@ export default function ContentAI() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">
-                  Prompt Template <span className="text-gray-400">(use {'{{variavel}}'} para placeholders)</span>
+                  Prompt Template <span className="text-gray-400">(use {'{{variável}}'} para placeholders)</span>
                 </label>
                 <textarea
                   value={tplForm.prompt_template}
@@ -646,7 +646,7 @@ export default function ContentAI() {
                   required
                   rows={4}
                   className="w-full border rounded px-3 py-2 text-sm font-mono"
-                  placeholder={'Crie uma copy de {{produto}} focada em {{beneficio}} para {{plataforma}}'}
+                  placeholder={'Crie uma copy de {{produto}} focada em {{benefício}} para {{plataforma}}'}
                 />
               </div>
               <div className="flex gap-2">

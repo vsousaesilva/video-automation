@@ -17,7 +17,7 @@ const CATEGORIAS = [
 ]
 
 const FREQUENCIAS = [
-  { value: 'diaria', label: 'Diaria' },
+  { value: 'diaria', label: 'Diária' },
   { value: '3x_semana', label: '3x por semana' },
   { value: 'semanal', label: 'Semanal' },
 ]
@@ -26,7 +26,7 @@ const DIAS_SEMANA = [
   { value: 0, label: 'Dom' }, { value: 1, label: 'Seg' },
   { value: 2, label: 'Ter' }, { value: 3, label: 'Qua' },
   { value: 4, label: 'Qui' }, { value: 5, label: 'Sex' },
-  { value: 6, label: 'Sab' },
+  { value: 6, label: 'Sáb' },
 ]
 
 const EMPTY_FORM = {
@@ -132,7 +132,7 @@ export default function Negocios() {
       setShowForm(false)
       fetchNegocios()
     } catch (err) {
-      setError(err.response?.data?.detail || 'Erro ao salvar negocio')
+      setError(err.response?.data?.detail || 'Erro ao salvar negócio')
     } finally {
       setSaving(false)
     }
@@ -210,17 +210,17 @@ export default function Negocios() {
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
               <Detail label="Categoria" value={selectedNegocio.categoria} />
-              <Detail label="Descricao" value={selectedNegocio.descricao} span />
-              <Detail label="Publico-alvo" value={selectedNegocio.publico_alvo} span />
+              <Detail label="Descrição" value={selectedNegocio.descricao} span />
+              <Detail label="Público-alvo" value={selectedNegocio.publico_alvo} span />
               <Detail label="Funcionalidades" value={(selectedNegocio.funcionalidades || []).join(', ')} span />
               <Detail label="Diferenciais" value={(selectedNegocio.diferenciais || []).join(', ')} span />
               <Detail label="CTA" value={selectedNegocio.cta} />
               <Detail label="Link download" value={selectedNegocio.link_download} />
               <Detail label="Plataformas" value={(selectedNegocio.plataformas || []).map(p => PLATAFORMA_LABELS[p] || p).join(', ')} />
               <Detail label="Formato YouTube" value={selectedNegocio.formato_youtube} />
-              <Detail label="Frequencia" value={selectedNegocio.frequencia} />
-              <Detail label="Horario de disparo" value={selectedNegocio.horario_disparo != null ? `${String(selectedNegocio.horario_disparo).padStart(2, '0')}:00` : '-'} />
-              <Detail label="Dias da semana" value={(selectedNegocio.dias_semana || []).map(d => DIAS_SEMANA.find(ds => ds.value === d)?.label).filter(Boolean).join(', ') || 'Todos (diaria)'} />
+              <Detail label="Frequência" value={selectedNegocio.frequencia} />
+              <Detail label="Horário de disparo" value={selectedNegocio.horario_disparo != null ? `${String(selectedNegocio.horario_disparo).padStart(2, '0')}:00` : '-'} />
+              <Detail label="Dias da semana" value={(selectedNegocio.dias_semana || []).map(d => DIAS_SEMANA.find(ds => ds.value === d)?.label).filter(Boolean).join(', ') || 'Todos (diária)'} />
               <Detail label="Tom de voz" value={selectedNegocio.tom_voz} />
               <Detail label="Keywords" value={(selectedNegocio.keywords || []).join(', ')} span />
             </dl>
@@ -233,7 +233,7 @@ export default function Negocios() {
                 <button onClick={() => handleStatusChange(selectedNegocio, 'ativo')} className="px-4 py-2 text-sm bg-green-100 text-green-700 rounded-lg hover:bg-green-200">Ativar</button>
               )}
               {selectedNegocio.status !== 'arquivado' && (
-                <button onClick={() => { if (confirm('Tem certeza que deseja arquivar este negocio?')) handleStatusChange(selectedNegocio, 'arquivado') }} className="px-4 py-2 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200">Arquivar</button>
+                <button onClick={() => { if (confirm('Tem certeza que deseja arquivar este negócio?')) handleStatusChange(selectedNegocio, 'arquivado') }} className="px-4 py-2 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200">Arquivar</button>
               )}
             </div>
           </div>
@@ -252,7 +252,7 @@ export default function Negocios() {
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
           Voltar
         </button>
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">{editingNegocio ? 'Editar Negocio' : 'Novo Negocio'}</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">{editingNegocio ? 'Editar Negócio' : 'Novo Negócio'}</h1>
 
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{error}</div>
@@ -261,7 +261,7 @@ export default function Negocios() {
         <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
           {/* Nome e Categoria */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field label="Nome do negocio *" value={form.nome} onChange={v => updateField('nome', v)} required minLength={2} />
+            <Field label="Nome do negócio *" value={form.nome} onChange={v => updateField('nome', v)} required minLength={2} />
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
               <select value={form.categoria} onChange={e => updateField('categoria', e.target.value)}
@@ -274,23 +274,23 @@ export default function Negocios() {
 
           {/* Descricao */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Descricao completa</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Descrição completa</label>
             <textarea value={form.descricao} onChange={e => updateField('descricao', e.target.value)}
               rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
           </div>
 
           {/* Publico-alvo */}
-          <Field label="Publico-alvo" value={form.publico_alvo} onChange={v => updateField('publico_alvo', v)} placeholder='Ex: "mulheres 25-40 interessadas em bem-estar"' />
+          <Field label="Público-alvo" value={form.publico_alvo} onChange={v => updateField('publico_alvo', v)} placeholder='Ex: "mulheres 25-40 interessadas em bem-estar"' />
 
           {/* Funcionalidades e Diferenciais */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field label="Funcionalidades (separadas por virgula)" value={form.funcionalidades} onChange={v => updateField('funcionalidades', v)} />
-            <Field label="Diferenciais (separados por virgula)" value={form.diferenciais} onChange={v => updateField('diferenciais', v)} />
+            <Field label="Funcionalidades (separadas por vírgula)" value={form.funcionalidades} onChange={v => updateField('funcionalidades', v)} />
+            <Field label="Diferenciais (separados por vírgula)" value={form.diferenciais} onChange={v => updateField('diferenciais', v)} />
           </div>
 
           {/* CTA e Link */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field label="Call to Action" value={form.cta} onChange={v => updateField('cta', v)} placeholder="Ex: Baixe gratis na App Store" />
+            <Field label="Call to Action" value={form.cta} onChange={v => updateField('cta', v)} placeholder="Ex: Baixe grátis na App Store" />
             <Field label="Link de download" value={form.link_download} onChange={v => updateField('link_download', v)} placeholder="https://..." />
           </div>
 
@@ -325,14 +325,14 @@ export default function Negocios() {
           {/* Frequencia e Horario */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Frequencia</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Frequência</label>
               <select value={form.frequencia} onChange={e => updateField('frequencia', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                 {FREQUENCIAS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Horario de disparo *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Horário de disparo *</label>
               <select value={form.horario_disparo} onChange={e => updateField('horario_disparo', Number(e.target.value))}
                 className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
                   hourConflict ? 'border-red-400 bg-red-50' : 'border-gray-300'
@@ -343,7 +343,7 @@ export default function Negocios() {
               </select>
               {hourConflict && (
                 <p className="text-xs text-red-600 mt-1">
-                  Horario ja em uso pelo negocio "{hourConflict.nome}"
+                  Horário já em uso pelo negócio "{hourConflict.nome}"
                 </p>
               )}
             </div>
@@ -368,15 +368,15 @@ export default function Negocios() {
 
           {/* Tom e Keywords */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field label="Tom de voz" value={form.tom_voz} onChange={v => updateField('tom_voz', v)} placeholder="Ex: profissional, descontraido" />
-            <Field label="Keywords SEO (separadas por virgula)" value={form.keywords} onChange={v => updateField('keywords', v)} />
+            <Field label="Tom de voz" value={form.tom_voz} onChange={v => updateField('tom_voz', v)} placeholder="Ex: profissional, descontraído" />
+            <Field label="Keywords SEO (separadas por vírgula)" value={form.keywords} onChange={v => updateField('keywords', v)} />
           </div>
 
           {/* Botoes */}
           <div className="flex gap-3 pt-4 border-t border-gray-200">
             <button type="submit" disabled={saving || !!hourConflict}
               className="px-6 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:bg-indigo-300 disabled:cursor-not-allowed transition-colors">
-              {saving ? 'Salvando...' : editingNegocio ? 'Salvar alteracoes' : 'Criar negocio'}
+              {saving ? 'Salvando...' : editingNegocio ? 'Salvar alterações' : 'Criar negócio'}
             </button>
             <button type="button" onClick={() => setShowForm(false)}
               className="px-6 py-2.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
@@ -392,17 +392,17 @@ export default function Negocios() {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Negocios</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Negócios</h1>
         <button onClick={openCreate}
           className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors">
-          + Novo Negocio
+          + Novo Negócio
         </button>
       </div>
 
       {loading ? (
         <p className="text-gray-500">Carregando...</p>
       ) : negocios.length === 0 ? (
-        <div className="text-center py-12 text-gray-400">Nenhum negocio cadastrado.</div>
+        <div className="text-center py-12 text-gray-400">Nenhum negócio cadastrado.</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {negocios.map((negocio) => (
@@ -439,7 +439,7 @@ export default function Negocios() {
                   <button onClick={() => handleStatusChange(negocio, 'ativo')} className="text-xs text-green-600 hover:underline">Ativar</button>
                 )}
                 {negocio.status !== 'arquivado' && (
-                  <button onClick={() => { if (confirm('Arquivar este negocio?')) handleStatusChange(negocio, 'arquivado') }} className="text-xs text-red-600 hover:underline">Arquivar</button>
+                  <button onClick={() => { if (confirm('Arquivar este negócio?')) handleStatusChange(negocio, 'arquivado') }} className="text-xs text-red-600 hover:underline">Arquivar</button>
                 )}
               </div>
             </div>

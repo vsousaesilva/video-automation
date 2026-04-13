@@ -15,7 +15,7 @@ export default function ResetPassword() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (password !== confirmPassword) {
-      setError('As senhas nao coincidem')
+      setError('As senhas não coincidem')
       return
     }
     setLoading(true)
@@ -35,8 +35,8 @@ export default function ResetPassword() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-900 px-4">
         <div className="w-full max-w-md text-center">
-          <h2 className="text-xl font-bold text-white mb-4">Link invalido</h2>
-          <p className="text-gray-400 mb-4">O link de recuperacao de senha e invalido ou expirou.</p>
+          <h2 className="text-xl font-bold text-white mb-4">Link inválido</h2>
+          <p className="text-gray-400 mb-4">O link de recuperação de senha é inválido ou expirou.</p>
           <Link to="/forgot-password" className="text-indigo-400 hover:text-indigo-300">
             Solicitar novo link
           </Link>
@@ -91,7 +91,7 @@ export default function ResetPassword() {
               required
               minLength={6}
               autoFocus
-              placeholder="Minimo 6 caracteres"
+              placeholder="Mínimo 6 caracteres"
               className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
             />
           </div>

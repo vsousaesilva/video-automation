@@ -126,7 +126,7 @@ export default function Approvals() {
           <div className="space-y-6">
             <div className="flex items-center gap-3">
               <h1 className="text-xl font-bold text-gray-900">
-                {detail.negocio_nome || 'Video'} — Aprovacao
+                {detail.negocio_nome || 'Vídeo'} — Aprovação
               </h1>
               <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-amber-100 text-amber-700">
                 {detail.status === 'aguardando_aprovacao' ? 'Aguardando' : detail.status}
@@ -262,7 +262,7 @@ export default function Approvals() {
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-gray-900">Vídeo {video.id.slice(0, 8)}...</p>
                   <div className="flex gap-4 mt-1 text-sm text-gray-500">
-                    <span>Negocio: {video.negocio_id.slice(0, 8)}...</span>
+                    <span>Negócio: {video.negocio_id.slice(0, 8)}...</span>
                     <span>Criado: {new Date(video.criado_em).toLocaleString('pt-BR')}</span>
                   </div>
                   <div className="flex gap-3 mt-2">

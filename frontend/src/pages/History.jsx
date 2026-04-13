@@ -5,17 +5,17 @@ import api from '../lib/api'
 const STATUS_STYLES = {
   publicado: { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Publicado' },
   aprovado: { bg: 'bg-green-100', text: 'text-green-700', label: 'Aprovado' },
-  aguardando_aprovacao: { bg: 'bg-amber-100', text: 'text-amber-700', label: 'Aguardando Aprovacao' },
+  aguardando_aprovacao: { bg: 'bg-amber-100', text: 'text-amber-700', label: 'Aguardando Aprovação' },
   rejeitado: { bg: 'bg-red-100', text: 'text-red-700', label: 'Rejeitado' },
-  erro_publicacao: { bg: 'bg-red-100', text: 'text-red-700', label: 'Erro Publicacao' },
-  erro_validacao: { bg: 'bg-red-100', text: 'text-red-700', label: 'Erro Validacao' },
+  erro_publicacao: { bg: 'bg-red-100', text: 'text-red-700', label: 'Erro Publicação' },
+  erro_validacao: { bg: 'bg-red-100', text: 'text-red-700', label: 'Erro Validação' },
   processando: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Processando' },
   erro: { bg: 'bg-red-100', text: 'text-red-700', label: 'Erro' },
 }
 
 const PIPELINE_STYLES = {
-  gerado: { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Conteudo Gerado', icon: '1' },
-  em_producao: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Construindo Video', icon: '2' },
+  gerado: { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Conteúdo Gerado', icon: '1' },
+  em_producao: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Construindo Vídeo', icon: '2' },
   erro: { bg: 'bg-red-100', text: 'text-red-700', label: 'Erro', icon: '!' },
 }
 
@@ -91,10 +91,10 @@ export default function History() {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Historico</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Histórico</h1>
         <select value={selectedNegocioId} onChange={e => setSelectedNegocioId(e.target.value)}
           className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-          <option value="all">Todos os negocios</option>
+          <option value="all">Todos os negócios</option>
           {negocios.map(n => (
             <option key={n.id} value={n.id}>{n.nome}</option>
           ))}
@@ -129,7 +129,7 @@ export default function History() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-gray-900">
-                        {conteudo.titulo || 'Conteudo ' + conteudo.id.slice(0, 8)}
+                        {conteudo.titulo || 'Conteúdo ' + conteudo.id.slice(0, 8)}
                       </span>
                       <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${ps.bg} ${ps.text}`}>
                         {ps.label}
@@ -147,10 +147,10 @@ export default function History() {
 
                   {/* Action */}
                   {conteudo.status === 'em_producao' && (
-                    <span className="text-xs text-blue-500">Gerando TTS, midia e video...</span>
+                    <span className="text-xs text-blue-500">Gerando TTS, mídia e vídeo...</span>
                   )}
                   {conteudo.status === 'gerado' && (
-                    <span className="text-xs text-gray-400">Aguardando construcao do video</span>
+                    <span className="text-xs text-gray-400">Aguardando construção do vídeo</span>
                   )}
                   {conteudo.status === 'aguardando_aprovacao' && (
                     <button
@@ -171,16 +171,16 @@ export default function History() {
       {loading || loadingVideos ? (
         <p className="text-gray-500">Carregando...</p>
       ) : videos.length === 0 && pipeline.length === 0 ? (
-        <div className="text-center py-12 text-gray-400">Nenhum video no historico.</div>
+        <div className="text-center py-12 text-gray-400">Nenhum vídeo no histórico.</div>
       ) : videos.length === 0 ? null : (
         <>
-          <h2 className="text-sm font-semibold text-gray-700 mb-3">Videos Concluidos</h2>
+          <h2 className="text-sm font-semibold text-gray-700 mb-3">Vídeos Concluídos</h2>
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200 bg-gray-50">
-                  <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">Negocio</th>
-                  <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">Titulo</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">Negócio</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">Título</th>
                   <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">Tipo</th>
                   <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">Status</th>
                   <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">Formatos</th>

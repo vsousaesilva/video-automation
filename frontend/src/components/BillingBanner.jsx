@@ -35,7 +35,7 @@ export default function BillingBanner() {
         <div className="flex items-center gap-2">
           <WarningIcon />
           <span>
-            <strong>Pagamento pendente.</strong> Regularize sua assinatura para evitar restricao de acesso.
+            <strong>Pagamento pendente.</strong> Regularize sua assinatura para evitar restrição de acesso.
           </span>
         </div>
         <div className="flex items-center gap-3">
@@ -56,7 +56,7 @@ export default function BillingBanner() {
         <div className="flex items-center gap-2">
           <WarningIcon />
           <span>
-            <strong>Assinatura cancelada.</strong> Voce esta no plano gratuito com funcionalidades limitadas.
+            <strong>Assinatura cancelada.</strong> Você está no plano gratuito com funcionalidades limitadas.
           </span>
         </div>
         <div className="flex items-center gap-3">
@@ -81,7 +81,7 @@ export default function BillingBanner() {
           <div className="flex items-center gap-2">
             <InfoIcon />
             <span>
-              Seu periodo de teste expira em <strong>{daysLeft} {daysLeft === 1 ? 'dia' : 'dias'}</strong>.
+              Seu período de teste expira em <strong>{daysLeft} {daysLeft === 1 ? 'dia' : 'dias'}</strong>.
               Escolha um plano para continuar usando todos os recursos.
             </span>
           </div>
@@ -111,7 +111,7 @@ export default function BillingBanner() {
             <div className="flex items-center gap-2">
               <InfoIcon />
               <span>
-                Voce usou <strong>{used}/{max}</strong> {label} do seu plano este mes.
+                Você usou <strong>{used}/{max}</strong> {label} do seu plano este mês.
                 Considere fazer upgrade para mais capacidade.
               </span>
             </div>
@@ -133,7 +133,7 @@ export default function BillingBanner() {
               <WarningIcon />
               <span>
                 <strong>Limite atingido:</strong> {used}/{max} {label} usados.
-                Faca upgrade para continuar gerando conteudo.
+                Faça upgrade para continuar gerando conteúdo.
               </span>
             </div>
             <div className="flex items-center gap-3">

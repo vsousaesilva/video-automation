@@ -287,7 +287,7 @@ export default function Funnel() {
             <h2 className="text-lg font-bold mb-4">{editingDeal ? 'Editar Oportunidade' : 'Nova Oportunidade'}</h2>
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Titulo *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">T\u00edtulo *</label>
                 <input type="text" value={dealForm.titulo} onChange={e => setDealForm({ ...dealForm, titulo: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm" />
               </div>
               <div className="grid grid-cols-2 gap-3">

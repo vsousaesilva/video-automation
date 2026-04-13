@@ -5,16 +5,16 @@ import useDashboardStore from '../stores/dashboardStore'
 import BillingBanner from './BillingBanner'
 
 const navItems = [
-  { to: '/', label: 'Dashboard', icon: DashboardIcon },
-  { to: '/negocios', label: 'Negocios', icon: NegociosIcon },
-  { to: '/approvals', label: 'Aprovacoes', icon: ApprovalsIcon, badge: true },
+  { to: '/', label: 'Dashboard', icon: DashboardIcon, end: true },
+  { to: '/negocios', label: 'Neg\u00f3cios', icon: NegociosIcon },
+  { to: '/approvals', label: 'Aprova\u00e7\u00f5es', icon: ApprovalsIcon, badge: true },
   { to: '/content-ai', label: 'Content AI', icon: ContentAIIcon },
-  { to: '/crm', label: 'Contatos', icon: ContactsIcon },
+  { to: '/crm', label: 'Contatos', icon: ContactsIcon, end: true },
   { to: '/crm/funnel', label: 'Funil', icon: FunnelIcon },
-  { to: '/media', label: 'Banco de Midia', icon: MediaIcon },
-  { to: '/history', label: 'Historico', icon: HistoryIcon },
+  { to: '/media', label: 'Banco de M\u00eddia', icon: MediaIcon },
+  { to: '/history', label: 'Hist\u00f3rico', icon: HistoryIcon },
   { to: '/settings/billing', label: 'Plano', icon: BillingIcon },
-  { to: '/settings', label: 'Configuracoes', icon: SettingsIcon },
+  { to: '/settings', label: 'Configura\u00e7\u00f5es', icon: SettingsIcon, end: true },
 ]
 
 export default function Layout() {
@@ -48,7 +48,7 @@ export default function Layout() {
             <NavLink
               key={item.to}
               to={item.to}
-              end={item.to === '/'}
+              end={item.end || false}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-6 py-3 text-sm transition-colors ${
                   isActive

@@ -56,7 +56,7 @@ export default function Billing() {
   }
 
   const handleCancel = async () => {
-    if (!confirm('Tem certeza que deseja cancelar sua assinatura? Voce perdera acesso ao final do periodo atual.')) {
+    if (!confirm('Tem certeza que deseja cancelar sua assinatura? Você perderá acesso ao final do período atual.')) {
       return
     }
     setCancelLoading(true)
@@ -86,7 +86,7 @@ export default function Billing() {
 
   return (
     <div className="p-8 max-w-5xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Plano e Cobranca</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">Plano e Cobrança</h1>
 
       {/* Current Plan Card */}
       <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
@@ -100,11 +100,11 @@ export default function Billing() {
             </div>
             <p className="text-gray-500 text-sm">
               {subscription?.status === 'trial'
-                ? `Trial gratuito ate ${formatDate(subscription?.trial_end)}`
+                ? `Trial gratuito até ${formatDate(subscription?.trial_end)}`
                 : subscription?.status === 'ativa'
                 ? 'Assinatura ativa'
                 : subscription?.status === 'cancelada'
-                ? 'Cancelada — acesso ate o fim do periodo'
+                ? 'Cancelada — acesso até o fim do período'
                 : 'Sem assinatura ativa'}
             </p>
           </div>
@@ -112,10 +112,10 @@ export default function Billing() {
             <p className="text-3xl font-bold text-gray-900">
               {currentPlan.preco_mensal
                 ? `R$ ${currentPlan.preco_mensal}`
-                : 'Gratis'}
+                : 'Grátis'}
             </p>
             {currentPlan.preco_mensal > 0 && (
-              <p className="text-gray-400 text-sm">/mes</p>
+              <p className="text-gray-400 text-sm">/mês</p>
             )}
           </div>
         </div>
@@ -136,15 +136,15 @@ export default function Billing() {
       {/* Usage */}
       {usage && (
         <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Uso do mes</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Uso do mês</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <UsageCard
-              label="Videos gerados"
+              label="Vídeos gerados"
               value={usage.videos_gerados || 0}
               limit={currentPlan.limite_videos_mes}
             />
             <UsageCard
-              label="Negocios"
+              label="Negócios"
               value={usage.negocios_count || 0}
               limit={currentPlan.limite_negocios}
             />
@@ -164,7 +164,7 @@ export default function Billing() {
 
       {/* Plans Grid */}
       <div className="mb-8">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Planos disponiveis</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Planos disponíveis</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {plans.map((plan) => {
             const isCurrent = plan.slug === subscription?.plan_slug
@@ -181,15 +181,15 @@ export default function Billing() {
               >
                 <h3 className="text-sm font-semibold text-gray-900 mb-1">{plan.nome}</h3>
                 <p className="text-2xl font-bold text-gray-900 mb-3">
-                  {plan.preco_mensal ? `R$ ${plan.preco_mensal}` : 'Gratis'}
+                  {plan.preco_mensal ? `R$ ${plan.preco_mensal}` : 'Grátis'}
                   {plan.preco_mensal > 0 && (
-                    <span className="text-sm font-normal text-gray-400">/mes</span>
+                    <span className="text-sm font-normal text-gray-400">/mês</span>
                   )}
                 </p>
 
                 <ul className="text-sm text-gray-600 space-y-1 mb-4">
-                  <li>{plan.limite_videos_mes ?? 'Ilimitados'} videos/mes</li>
-                  <li>{plan.limite_negocios ?? 'Ilimitados'} negocios</li>
+                  <li>{plan.limite_videos_mes ?? 'Ilimitados'} vídeos/mês</li>
+                  <li>{plan.limite_negocios ?? 'Ilimitados'} negócios</li>
                   {plan.modulos_disponiveis?.map((mod) => (
                     <li key={mod} className="capitalize">{mod.replace('_', ' ')}</li>
                   ))}

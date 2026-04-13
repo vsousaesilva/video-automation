@@ -4,9 +4,9 @@ import api from '../lib/api'
 import useAuthStore from '../stores/authStore'
 
 const STEPS = [
-  { title: 'Dados do Workspace', description: 'Configure seu espaco de trabalho' },
-  { title: 'Integracoes', description: 'Conecte suas plataformas' },
-  { title: 'Primeiro Negocio', description: 'Crie seu primeiro negocio' },
+  { title: 'Dados do Workspace', description: 'Configure seu espaço de trabalho' },
+  { title: 'Integrações', description: 'Conecte suas plataformas' },
+  { title: 'Primeiro Negócio', description: 'Crie seu primeiro negócio' },
 ]
 
 export default function Onboarding() {
@@ -110,8 +110,8 @@ export default function Onboarding() {
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-white">Bem-vindo a Usina do Tempo</h1>
-          <p className="text-gray-400 mt-2">Vamos configurar tudo em 3 passos rapidos</p>
+          <h1 className="text-2xl font-bold text-white">Bem-vindo à Usina do Tempo</h1>
+          <p className="text-gray-400 mt-2">Vamos configurar tudo em 3 passos rápidos</p>
         </div>
 
         {/* Progress Steps */}
@@ -182,7 +182,7 @@ export default function Onboarding() {
               onClick={handleNext}
               className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors"
             >
-              Proximo
+              Próximo
             </button>
           ) : (
             <button
@@ -190,7 +190,7 @@ export default function Onboarding() {
               disabled={loading}
               className="px-6 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-800 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors"
             >
-              {loading ? 'Finalizando...' : 'Finalizar e comecar'}
+              {loading ? 'Finalizando...' : 'Finalizar e começar'}
             </button>
           )}
         </div>
@@ -206,7 +206,7 @@ function StepWorkspace({ values, onChange }) {
     <div className="space-y-4">
       <h2 className="text-lg font-semibold text-white mb-2">Dados do Workspace</h2>
       <p className="text-gray-400 text-sm mb-4">
-        Essas informacoes ajudam a personalizar sua experiencia.
+        Essas informações ajudam a personalizar sua experiência.
       </p>
 
       <div>
@@ -242,14 +242,14 @@ function StepWorkspace({ values, onChange }) {
           className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
         >
           <option value="">Selecione...</option>
-          <option value="saude">Saude e Bem-estar</option>
-          <option value="educacao">Educacao</option>
+          <option value="saude">Saúde e Bem-estar</option>
+          <option value="educacao">Educação</option>
           <option value="tecnologia">Tecnologia</option>
           <option value="ecommerce">E-commerce</option>
-          <option value="servicos">Servicos</option>
-          <option value="alimentacao">Alimentacao</option>
+          <option value="servicos">Serviços</option>
+          <option value="alimentacao">Alimentação</option>
           <option value="moda">Moda</option>
-          <option value="imobiliario">Imobiliario</option>
+          <option value="imobiliario">Imobiliário</option>
           <option value="financeiro">Financeiro</option>
           <option value="outro">Outro</option>
         </select>
@@ -261,10 +261,10 @@ function StepWorkspace({ values, onChange }) {
 function StepIntegrations({ values, onChange }) {
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold text-white mb-2">Integracoes</h2>
+      <h2 className="text-lg font-semibold text-white mb-2">Integrações</h2>
       <p className="text-gray-400 text-sm mb-4">
-        Configure suas integracoes agora ou pule e faca depois em Configuracoes.
-        Todos os campos sao opcionais.
+        Configure suas integrações agora ou pule e faça depois em Configurações.
+        Todos os campos são opcionais.
       </p>
 
       <div className="p-4 bg-gray-700/50 rounded-lg border border-gray-600">
@@ -337,32 +337,32 @@ function StepIntegrations({ values, onChange }) {
 function StepNegocio({ values, onChange, togglePlataforma }) {
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold text-white mb-2">Primeiro Negocio</h2>
+      <h2 className="text-lg font-semibold text-white mb-2">Primeiro Negócio</h2>
       <p className="text-gray-400 text-sm mb-4">
-        Configure o negocio que tera videos gerados automaticamente.
+        Configure o negócio que terá vídeos gerados automaticamente.
       </p>
 
       <div>
-        <label className="block text-sm font-medium text-gray-300 mb-1">Nome do negocio</label>
+        <label className="block text-sm font-medium text-gray-300 mb-1">Nome do negócio</label>
         <input
           name="nome"
           type="text"
           value={values.nome}
           onChange={onChange}
           required
-          placeholder="Ex: Minha Clinica, Minha Loja..."
+          placeholder="Ex: Minha Clínica, Minha Loja..."
           className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-300 mb-1">Descricao breve</label>
+        <label className="block text-sm font-medium text-gray-300 mb-1">Descrição breve</label>
         <textarea
           name="descricao"
           value={values.descricao}
           onChange={onChange}
           rows={2}
-          placeholder="Sobre o que e o negocio, publico-alvo, diferenciais..."
+          placeholder="Sobre o que é o negócio, público-alvo, diferenciais..."
           className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-none"
         />
       </div>
@@ -378,8 +378,8 @@ function StepNegocio({ values, onChange, togglePlataforma }) {
           >
             <option value="profissional">Profissional</option>
             <option value="casual">Casual</option>
-            <option value="humoristico">Humoristico</option>
-            <option value="tecnico">Tecnico</option>
+            <option value="humoristico">Humorístico</option>
+            <option value="tecnico">Técnico</option>
             <option value="inspirador">Inspirador</option>
           </select>
         </div>
@@ -392,8 +392,8 @@ function StepNegocio({ values, onChange, togglePlataforma }) {
             onChange={onChange}
             className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
           >
-            <option value="pt-BR">Portugues (BR)</option>
-            <option value="en-US">Ingles (US)</option>
+            <option value="pt-BR">Português (BR)</option>
+            <option value="en-US">Inglês (US)</option>
             <option value="es-ES">Espanhol</option>
           </select>
         </div>
@@ -438,7 +438,7 @@ function StepNegocio({ values, onChange, togglePlataforma }) {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Horario de postagem</label>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Horário de postagem</label>
           <input
             name="horario_postagem"
             type="time"
@@ -448,7 +448,7 @@ function StepNegocio({ values, onChange, togglePlataforma }) {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Videos por semana</label>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Vídeos por semana</label>
           <input
             name="frequencia_semanal"
             type="number"

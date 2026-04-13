@@ -65,7 +65,7 @@ export default function Signup() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-white">Usina do Tempo</h1>
-          <p className="text-gray-400 mt-2">Crie sua conta e comece gratis por 7 dias</p>
+          <p className="text-gray-400 mt-2">Crie sua conta e comece grátis por 7 dias</p>
         </div>
 
         <form onSubmit={handleSubmit} className="bg-gray-800 rounded-xl p-8 shadow-xl">
@@ -87,7 +87,7 @@ export default function Signup() {
               onChange={handleChange}
               required
               autoFocus
-              placeholder="Como voce quer ser chamado"
+              placeholder="Como você quer ser chamado"
               className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
             />
           </div>
@@ -120,7 +120,7 @@ export default function Signup() {
               onChange={handleChange}
               required
               minLength={6}
-              placeholder="Minimo 6 caracteres"
+              placeholder="Mínimo 6 caracteres"
               className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
             />
           </div>
@@ -142,13 +142,13 @@ export default function Signup() {
           </div>
 
           <p className="text-xs text-gray-500 mb-4">
-            Ao criar sua conta, voce concorda com os{' '}
+            Ao criar sua conta, você concorda com os{' '}
             <Link to="/termos" className="text-indigo-400 hover:text-indigo-300">
               Termos de Uso
             </Link>{' '}
             e a{' '}
             <Link to="/privacidade" className="text-indigo-400 hover:text-indigo-300">
-              Politica de Privacidade
+              Política de Privacidade
             </Link>.
           </p>
 
@@ -157,11 +157,11 @@ export default function Signup() {
             disabled={loading}
             className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-800 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors"
           >
-            {loading ? 'Criando conta...' : 'Criar conta gratis'}
+            {loading ? 'Criando conta...' : 'Criar conta grátis'}
           </button>
 
           <p className="text-center text-gray-400 text-sm mt-4">
-            Ja tem uma conta?{' '}
+            Já tem uma conta?{' '}
             <Link to="/login" className="text-indigo-400 hover:text-indigo-300">
               Fazer login
             </Link>
