@@ -30,7 +30,7 @@ const TIPO_COLORS = {
 
 export default function ContactDetail() {
   const { id } = useParams()
-  const token = useAuthStore((s) => s.token)
+  const token = localStorage.getItem('access_token')
   const navigate = useNavigate()
 
   const [contact, setContact] = useState(null)

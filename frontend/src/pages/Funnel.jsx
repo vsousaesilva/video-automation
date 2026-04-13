@@ -4,7 +4,7 @@ import useAuthStore from '../stores/authStore'
 const API = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 export default function Funnel() {
-  const token = useAuthStore((s) => s.token)
+  const token = localStorage.getItem('access_token')
 
   const [stages, setStages] = useState([])
   const [deals, setDeals] = useState([])
