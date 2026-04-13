@@ -41,8 +41,8 @@ export default function Contacts() {
 
       const res = await fetch(`${API}/crm/contacts?${params}`, { headers })
       const data = await res.json()
-      setContacts(data.data || [])
-      setTotal(data.total || 0)
+      setContacts(Array.isArray(data?.data) ? data.data : [])
+      setTotal(data?.total || 0)
     } catch (err) {
       console.error('Erro ao carregar contatos:', err)
     } finally {
@@ -54,7 +54,7 @@ export default function Contacts() {
     try {
       const res = await fetch(`${API}/crm/tags`, { headers })
       const data = await res.json()
-      setTags(data || [])
+      setTags(Array.isArray(data) ? data : [])
     } catch (err) {
       console.error('Erro ao carregar tags:', err)
     }

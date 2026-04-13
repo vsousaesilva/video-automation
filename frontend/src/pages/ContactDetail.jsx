@@ -50,9 +50,9 @@ export default function ContactDetail() {
       const res = await fetch(`${API}/crm/contacts/${id}`, { headers })
       if (!res.ok) { navigate('/crm'); return }
       const data = await res.json()
-      setContact(data.contact)
-      setActivities(data.activities || [])
-      setDeals(data.deals || [])
+      setContact(data?.contact || null)
+      setActivities(Array.isArray(data?.activities) ? data.activities : [])
+      setDeals(Array.isArray(data?.deals) ? data.deals : [])
     } catch (err) {
       console.error('Erro ao carregar contato:', err)
     } finally {

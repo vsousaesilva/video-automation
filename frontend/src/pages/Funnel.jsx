@@ -24,21 +24,33 @@ export default function Funnel() {
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
 
   const fetchStages = useCallback(async () => {
-    const res = await fetch(`${API}/crm/stages`, { headers })
-    const data = await res.json()
-    setStages(data || [])
+    try {
+      const res = await fetch(`${API}/crm/stages`, { headers })
+      const data = await res.json()
+      setStages(Array.isArray(data) ? data : [])
+    } catch (err) {
+      console.error('Erro ao carregar etapas:', err)
+    }
   }, [token])
 
   const fetchDeals = useCallback(async () => {
-    const res = await fetch(`${API}/crm/deals?status=${statusFilter}`, { headers })
-    const data = await res.json()
-    setDeals(data || [])
+    try {
+      const res = await fetch(`${API}/crm/deals?status=${statusFilter}`, { headers })
+      const data = await res.json()
+      setDeals(Array.isArray(data) ? data : [])
+    } catch (err) {
+      console.error('Erro ao carregar deals:', err)
+    }
   }, [token, statusFilter])
 
   const fetchContacts = useCallback(async () => {
-    const res = await fetch(`${API}/crm/contacts?per_page=100`, { headers })
-    const data = await res.json()
-    setContacts(data.data || [])
+    try {
+      const res = await fetch(`${API}/crm/contacts?per_page=100`, { headers })
+      const data = await res.json()
+      setContacts(Array.isArray(data?.data) ? data.data : [])
+    } catch (err) {
+      console.error('Erro ao carregar contatos:', err)
+    }
   }, [token])
 
   useEffect(() => {
