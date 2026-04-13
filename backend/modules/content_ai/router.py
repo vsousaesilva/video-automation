@@ -46,7 +46,7 @@ async def generate_content(
     try:
         result = await gen(
             workspace_id=current_user["workspace_id"],
-            user_id=current_user["sub"],
+            user_id=current_user["id"],
             tipo=body.tipo.value,
             tom_voz=body.tom_voz.value,
             idioma=body.idioma,
