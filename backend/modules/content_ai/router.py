@@ -43,20 +43,26 @@ async def generate_content(
     """Gera conteúdo com IA (copy, legenda, roteiro, artigo, etc.)."""
     from modules.content_ai.services.generator import generate_content as gen
 
-    result = await gen(
-        workspace_id=current_user["workspace_id"],
-        user_id=current_user["sub"],
-        tipo=body.tipo.value,
-        tom_voz=body.tom_voz.value,
-        idioma=body.idioma,
-        negocio_id=body.negocio_id,
-        template_id=body.template_id,
-        prompt_usuario=body.prompt_usuario,
-        contexto=body.contexto,
-        quantidade=body.quantidade,
-        plataforma=body.plataforma,
-    )
-    return result
+    try:
+        result = await gen(
+            workspace_id=current_user["workspace_id"],
+            user_id=current_user["sub"],
+            tipo=body.tipo.value,
+            tom_voz=body.tom_voz.value,
+            idioma=body.idioma,
+            negocio_id=body.negocio_id,
+            template_id=body.template_id,
+            prompt_usuario=body.prompt_usuario,
+            contexto=body.contexto,
+            quantidade=body.quantidade,
+            plataforma=body.plataforma,
+        )
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Erro ao gerar conteúdo: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Erro ao gerar conteúdo: {str(e)}")
 
 
 # ============================================================

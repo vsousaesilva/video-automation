@@ -177,26 +177,33 @@ async def generate_content(
 
     # Buscar dados do negócio se fornecido
     if negocio_id and "negocio_nome" not in contexto:
-        neg = supabase.table("negocios").select("*").eq("id", negocio_id).single().execute()
-        if neg.data:
-            contexto.update({
-                "negocio_nome": neg.data.get("nome", ""),
-                "categoria": neg.data.get("categoria", ""),
-                "descricao": neg.data.get("descricao", ""),
-                "publico_alvo": neg.data.get("publico_alvo", ""),
-                "cta": neg.data.get("cta", ""),
-                "funcionalidades": neg.data.get("funcionalidades", []),
-                "diferenciais": neg.data.get("diferenciais", []),
-            })
+        try:
+            neg = supabase.table("negocios").select("*").eq("id", negocio_id).limit(1).execute()
+            if neg.data and len(neg.data) > 0:
+                n = neg.data[0]
+                contexto.update({
+                    "negocio_nome": n.get("nome", ""),
+                    "categoria": n.get("categoria", ""),
+                    "descricao": n.get("descricao", ""),
+                    "publico_alvo": n.get("publico_alvo", ""),
+                    "cta": n.get("cta", ""),
+                    "funcionalidades": n.get("funcionalidades", []),
+                    "diferenciais": n.get("diferenciais", []),
+                })
+        except Exception as e:
+            logger.warning(f"Erro ao buscar negócio {negocio_id}: {e}")
 
     # Buscar template se fornecido
     template_prompt = None
     if template_id:
-        tpl = supabase.table("content_templates").select("*").eq("id", template_id).single().execute()
-        if tpl.data:
-            template_prompt = tpl.data.get("prompt_template")
-            if not tom_voz and tpl.data.get("tom_voz"):
-                tom_voz = tpl.data["tom_voz"]
+        try:
+            tpl = supabase.table("content_templates").select("*").eq("id", template_id).limit(1).execute()
+            if tpl.data and len(tpl.data) > 0:
+                template_prompt = tpl.data[0].get("prompt_template")
+                if not tom_voz and tpl.data[0].get("tom_voz"):
+                    tom_voz = tpl.data[0]["tom_voz"]
+        except Exception as e:
+            logger.warning(f"Erro ao buscar template {template_id}: {e}")
 
     # Criar request no banco
     request_data = {
