@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import api from '../lib/api'
 
 const TIPOS = [
@@ -61,6 +62,11 @@ export default function ContentAI() {
 
   // Detalhe expandido
   const [expandedId, setExpandedId] = useState(null)
+
+  // Sucesso ao enviar para Video Engine
+  const [videoSuccess, setVideoSuccess] = useState(null) // { contentId, conteudoId }
+  const [sentToVideo, setSentToVideo] = useState(new Set())
+  const navigate = useNavigate()
 
   useEffect(() => {
     fetchNegocios()
@@ -143,12 +149,17 @@ export default function ContentAI() {
       return
     }
     try {
-      await api.post('/content-ai/use-in-video', {
+      const res = await api.post('/content-ai/use-in-video', {
         generated_content_id: contentId,
         negocio_id: negocioId,
       })
       setError('')
-      alert('Conteudo enviado para o Video Engine com sucesso!')
+      setSentToVideo((prev) => new Set([...prev, contentId]))
+      setVideoSuccess({
+        contentId,
+        conteudoId: res.data.conteudo_id,
+        negocioNome: negocios.find((n) => n.id === negocioId)?.nome || 'Negocio',
+      })
     } catch (err) {
       setError(err.response?.data?.detail || 'Erro ao enviar para Video Engine')
     }
@@ -405,13 +416,18 @@ export default function ContentAI() {
                       >
                         Copiar
                       </button>
-                      {tipo === 'roteiro' && (
+                      {negocioId && !sentToVideo.has(content.id) && (
                         <button
                           onClick={() => handleUseInVideo(content.id)}
                           className="text-xs text-indigo-600 hover:text-indigo-800 px-2 py-1 rounded hover:bg-indigo-50 transition-colors"
                         >
                           Usar no Video Engine
                         </button>
+                      )}
+                      {sentToVideo.has(content.id) && (
+                        <span className="text-xs text-green-600 px-2 py-1">
+                          Enviado ao Video Engine
+                        </span>
                       )}
                       <div className="ml-auto flex gap-1">
                         {[1, 2, 3, 4, 5].map((star) => (
@@ -429,6 +445,46 @@ export default function ContentAI() {
                         ))}
                       </div>
                     </div>
+
+                    {/* Sucesso: proximos passos */}
+                    {videoSuccess && videoSuccess.contentId === content.id && (
+                      <div className="bg-green-50 border-t border-green-200 px-4 py-3">
+                        <div className="flex items-start gap-2">
+                          <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-green-800">
+                              Conteudo enviado para "{videoSuccess.negocioNome}"
+                            </p>
+                            <p className="text-xs text-green-600 mt-1">
+                              O conteudo foi adicionado ao pipeline do negocio. Na proxima execucao do pipeline,
+                              sera gerado um video automaticamente. Voce pode acompanhar em:
+                            </p>
+                            <div className="flex gap-3 mt-2">
+                              <button
+                                onClick={() => navigate('/history')}
+                                className="text-xs font-medium text-green-700 hover:text-green-900 underline"
+                              >
+                                Historico de Videos
+                              </button>
+                              <button
+                                onClick={() => navigate('/approvals')}
+                                className="text-xs font-medium text-green-700 hover:text-green-900 underline"
+                              >
+                                Aprovacoes Pendentes
+                              </button>
+                              <button
+                                onClick={() => setVideoSuccess(null)}
+                                className="text-xs text-green-500 hover:text-green-700 ml-auto"
+                              >
+                                Fechar
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
