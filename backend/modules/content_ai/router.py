@@ -285,10 +285,23 @@ async def use_in_video_engine(
         if not neg:
             raise HTTPException(status_code=404, detail="Negócio não encontrado")
 
+        # Mapear tipo Content AI → enum tipo_conteudo do Video Engine
+        # O enum Postgres aceita: problema_solucao, tutorial_rapido, beneficio_destaque,
+        # prova_social, comparativo, curiosidade_nicho
+        TIPO_MAP = {
+            "roteiro": "tutorial_rapido",
+            "copy_ads": "beneficio_destaque",
+            "legenda": "beneficio_destaque",
+            "artigo": "curiosidade_nicho",
+            "resposta_comentario": "prova_social",
+            "email_marketing": "problema_solucao",
+        }
+        tipo_video = TIPO_MAP.get(content.get("tipo", ""), "beneficio_destaque")
+
         # Criar conteúdo na tabela conteudos (Video Engine)
         conteudo_data = {
             "negocio_id": body.negocio_id,
-            "tipo_conteudo": content.get("tipo", "roteiro"),
+            "tipo_conteudo": tipo_video,
             "roteiro": content.get("conteudo", ""),
             "titulo": content.get("titulo", ""),
             "descricao_youtube": metadata.get("meta_description", ""),
