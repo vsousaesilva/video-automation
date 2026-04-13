@@ -14,6 +14,7 @@ import History from './pages/History'
 import Settings from './pages/Settings'
 import MediaBank from './pages/MediaBank'
 import Billing from './pages/Billing'
+import ContentAI from './pages/ContentAI'
 import TermosDeUso from './pages/TermosDeUso'
 import PoliticaPrivacidade from './pages/PoliticaPrivacidade'
 
@@ -65,6 +66,7 @@ export default function App() {
         <Route path="approvals" element={<Approvals />} />
         <Route path="media" element={<MediaBank />} />
         <Route path="history" element={<History />} />
+        <Route path="content-ai" element={<ContentAI />} />
         <Route path="settings" element={<Settings />} />
         <Route path="settings/billing" element={<Billing />} />
       </Route>

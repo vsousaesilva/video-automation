@@ -52,5 +52,6 @@ celery_app.conf.update(
 # Autodiscover tasks em todos os módulos
 celery_app.autodiscover_tasks([
     "modules.video_engine",
+    "modules.content_ai",
     "core",
 ])

@@ -65,6 +65,8 @@ AUDIT_ROUTES = {
     ("DELETE", "/users"): "remove_user",
     ("GET", "/privacy/my-data"): "export_data",
     ("DELETE", "/privacy/my-data"): "delete_data_request",
+    ("POST", "/content-ai/generate"): "generate_content_ai",
+    ("POST", "/content-ai/use-in-video"): "content_ai_to_video",
 }
 
 
@@ -146,6 +148,7 @@ class AuditLogMiddleware(BaseHTTPMiddleware):
 BILLING_CHECKS = {
     ("POST", "/pipeline/trigger"): ("videos_gerados", "max_videos_mes"),
     ("POST", "/negocios"): ("_count_negocios", "max_negocios"),
+    ("POST", "/content-ai/generate"): ("conteudos_gerados", "max_conteudos_mes"),
 }
 
 

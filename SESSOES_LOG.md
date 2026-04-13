@@ -400,3 +400,113 @@
   - Testar dashboard com plano Free (dados limitados/zerados)
 
 - **Proxima sessao:** Sessao 6 — Content AI
+
+---
+
+## Sessao 6 — Content AI
+- **Data:** 2026-04-13
+- **Status:** Concluida
+- **O que foi feito:**
+
+  **Migration (012_content_ai.sql):**
+  - Tabela `content_templates` — templates de prompts reutilizaveis (nome, tipo, tom_voz, prompt_template com placeholders, variaveis JSONB)
+  - Tabela `content_requests` — requisicoes de geracao (tipo, tom_voz, idioma, prompt_usuario, contexto JSONB, quantidade, status)
+  - Tabela `generated_contents` — conteudos gerados (titulo, conteudo, metadata JSONB, tokens_usados, avaliacao 1-5, usado_em)
+  - Indices otimizados por workspace_id, tipo, status, criado_em
+  - RLS habilitado em todas as tabelas com policy de isolamento por workspace
+
+  **Backend — Modulo Content AI (modules/content_ai/):**
+  - `schemas.py` — enums TipoConteudoAI (6 tipos) e TomVoz (8 tons), schemas de request/response para generate, templates, rate, use-in-video
+  - `router.py` — 9 endpoints:
+    - `POST /content-ai/generate` — gerar conteudo (copy, legenda, roteiro, artigo, resposta_comentario, email_marketing)
+    - `GET /content-ai/history` — historico com filtros (tipo, negocio_id, paginacao)
+    - `GET /content-ai/history/{id}` — detalhes de uma geracao com conteudos
+    - `GET /content-ai/templates` — listar templates do workspace
+    - `POST /content-ai/templates` — criar template customizado
+    - `PUT /content-ai/templates/{id}` — atualizar template
+    - `DELETE /content-ai/templates/{id}` — soft-delete template
+    - `POST /content-ai/rate/{id}` — avaliar conteudo gerado (1-5 estrelas)
+    - `POST /content-ai/use-in-video` — enviar conteudo para Video Engine (cria na tabela conteudos)
+  - `services/generator.py` — integracao Gemini com:
+    - Prompts especializados por tipo (SYSTEM_PROMPTS e OUTPUT_FORMATS)
+    - Suporte a templates customizados com placeholders {{variavel}}
+    - Contexto automatico do negocio (busca dados se negocio_id fornecido)
+    - Multiplas variacoes (1-5) com temperatura variavel
+    - Retry 3x com fallback
+    - Incremento automatico de conteudos_gerados no billing
+
+  **Backend — Celery Tasks (modules/content_ai/tasks.py):**
+  - `generate_content_task` — task individual com retry 2x, backoff exponencial
+  - `generate_batch_task` — fan-out: enfileira multiplas geracoes como tasks individuais
+
+  **Backend — Configuracao:**
+  - `core/tasks.py` — autodiscover atualizado para incluir `modules.content_ai`
+  - `core/middleware.py` — billing enforcement para `POST /content-ai/generate` (verifica conteudos_gerados vs max_conteudos_mes)
+  - `core/middleware.py` — audit log para `POST /content-ai/generate` e `POST /content-ai/use-in-video`
+  - `main.py` — import content_ai router, versao 0.4.0
+
+  **Frontend — Pagina Content AI (ContentAI.jsx):**
+  - 3 abas: Gerar Conteudo, Historico, Templates
+  - Aba Gerar:
+    - Seletor visual de tipo de conteudo (6 opcoes com descricao)
+    - Seletor de tom de voz (8 opcoes)
+    - Seletor de negocio (opcional, puxa dados automaticamente)
+    - Seletor de plataforma (para copy_ads e legenda)
+    - Seletor de template (filtra por tipo)
+    - Campo de instrucoes adicionais (textarea)
+    - Slider de variacoes (1-5)
+    - Preview de resultado com copiar, avaliar (estrelas) e usar no Video Engine
+    - Loading state com animacao
+  - Aba Historico:
+    - Filtro por tipo de conteudo
+    - Lista expansivel de geracoes com status, data, quantidade de resultados
+    - Detalhes expandidos com conteudos gerados, copiar, avaliacao
+  - Aba Templates:
+    - Grid de templates com nome, tipo, preview do prompt
+    - Formulario de criacao com placeholders
+    - Soft-delete e acao "Usar este template"
+
+  **Frontend — Navegacao:**
+  - `App.jsx` — rota `/content-ai` adicionada
+  - `Layout.jsx` — link "Content AI" no sidebar com icone de lampada
+
+- **Decisoes tomadas:**
+  - 6 tipos de conteudo cobrindo os principais formatos de marketing digital
+  - Prompts especializados por tipo (system prompt diferente para cada)
+  - Templates com placeholders {{variavel}} para reutilizacao
+  - Temperatura variavel entre variacoes (0.85 + 0.05 * i) para diversidade
+  - Integracao com Video Engine via endpoint dedicado (cria conteudo na tabela conteudos)
+  - Billing enforcement via middleware (reutiliza padrao da Sessao 4)
+  - Avaliacao de conteudo (1-5 estrelas) para feedback loop futuro
+  - Soft-delete em templates (campo ativo=false)
+
+- **Arquivos criados/modificados:**
+  ```
+  Criados:
+  - backend/migrations/012_content_ai.sql
+  - backend/modules/content_ai/__init__.py
+  - backend/modules/content_ai/schemas.py
+  - backend/modules/content_ai/router.py
+  - backend/modules/content_ai/tasks.py
+  - backend/modules/content_ai/services/__init__.py
+  - backend/modules/content_ai/services/generator.py
+  - frontend/src/pages/ContentAI.jsx
+
+  Modificados:
+  - backend/main.py (import content_ai, v0.4.0)
+  - backend/core/tasks.py (autodiscover content_ai)
+  - backend/core/middleware.py (billing + audit para content-ai)
+  - frontend/src/App.jsx (rota /content-ai)
+  - frontend/src/components/Layout.jsx (nav link + icone ContentAI)
+  ```
+
+- **Pendencias:**
+  - Executar migration 012 no Supabase
+  - Testar geracao de cada tipo (copy_ads, legenda, roteiro, artigo, resposta_comentario, email_marketing)
+  - Testar template customizado com placeholders
+  - Testar integracao "Usar no Video Engine" (gerar roteiro → criar conteudo no pipeline)
+  - Testar billing enforcement (limite de conteudos_gerados)
+  - Testar avaliacao de conteudo (1-5 estrelas)
+  - Verificar que audit_log registra geracoes
+
+- **Proxima sessao:** Sessao 7 — CRM
