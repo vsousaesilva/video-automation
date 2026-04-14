@@ -21,6 +21,7 @@ class StatusReport(str, Enum):
 # === Competitors ===
 
 class CompetitorCreate(BaseModel):
+    negocio_id: str = Field(min_length=1, description="Negocio ao qual o concorrente pertence")
     nome: str = Field(min_length=1, max_length=255)
     segmento: Optional[str] = Field(None, max_length=100)
     website: Optional[str] = Field(None, max_length=500)
@@ -46,6 +47,7 @@ class CompetitorUpdate(BaseModel):
 # === Reports ===
 
 class BenchmarkAnalyzeRequest(BaseModel):
+    negocio_id: str = Field(min_length=1)
     nome: str = Field(min_length=1, max_length=255, description="Nome do relatorio")
     competitor_ids: list[str] = Field(min_length=1)
     redes: list[RedeSocial] = [RedeSocial.instagram, RedeSocial.youtube, RedeSocial.tiktok]

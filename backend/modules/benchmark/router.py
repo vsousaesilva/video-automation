@@ -14,7 +14,7 @@ Endpoints:
 import logging
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from core.auth import get_current_user
 from core.db import get_supabase
@@ -56,17 +56,36 @@ def _ensure_benchmark_plan(workspace_id: str):
 # Competitors
 # ============================================================
 
-@router.get("/competitors")
-async def list_competitors(current_user: dict = Depends(get_current_user)):
+def _ensure_negocio_pertence(workspace_id: str, negocio_id: str) -> None:
+    """Valida que o negocio existe e pertence ao workspace atual."""
     supabase = get_supabase()
-    result = (
-        supabase.table("competitors")
-        .select("*")
-        .eq("workspace_id", current_user["workspace_id"])
-        .order("criado_em", desc=True)
+    res = (
+        supabase.table("negocios")
+        .select("id")
+        .eq("id", negocio_id)
+        .eq("workspace_id", workspace_id)
+        .limit(1)
         .execute()
     )
-    return result.data or []
+    if not res.data:
+        raise HTTPException(404, "Negocio nao encontrado neste workspace")
+
+
+@router.get("/competitors")
+async def list_competitors(
+    current_user: dict = Depends(get_current_user),
+    negocio_id: str = Query(None, description="Filtrar por negocio"),
+):
+    supabase = get_supabase()
+    q = (
+        supabase.table("competitors")
+        .select("*, negocios(nome)")
+        .eq("workspace_id", current_user["workspace_id"])
+        .order("criado_em", desc=True)
+    )
+    if negocio_id:
+        q = q.eq("negocio_id", negocio_id)
+    return q.execute().data or []
 
 
 @router.post("/competitors")
@@ -74,6 +93,7 @@ async def create_competitor(
     body: CompetitorCreate,
     current_user: dict = Depends(get_current_user),
 ):
+    _ensure_negocio_pertence(current_user["workspace_id"], body.negocio_id)
     supabase = get_supabase()
     data = body.model_dump()
     data["workspace_id"] = current_user["workspace_id"]
@@ -133,21 +153,25 @@ async def analyze(
     supabase = get_supabase()
     workspace_id = current_user["workspace_id"]
 
-    # validar se todos os competitor_ids pertencem ao workspace
+    _ensure_negocio_pertence(workspace_id, body.negocio_id)
+
+    # Concorrentes devem pertencer ao mesmo negocio do relatorio
     comps = (
         supabase.table("competitors")
         .select("id")
         .in_("id", body.competitor_ids)
         .eq("workspace_id", workspace_id)
+        .eq("negocio_id", body.negocio_id)
         .execute()
         .data or []
     )
     ids_validos = [c["id"] for c in comps]
     if not ids_validos:
-        raise HTTPException(400, "Nenhum concorrente valido")
+        raise HTTPException(400, "Nenhum concorrente valido para este negocio")
 
     report = {
         "workspace_id": workspace_id,
+        "negocio_id": body.negocio_id,
         "nome": body.nome,
         "competitor_ids": ids_validos,
         "parametros": {
@@ -182,17 +206,21 @@ async def analyze(
 
 
 @router.get("/reports")
-async def list_reports(current_user: dict = Depends(get_current_user)):
+async def list_reports(
+    current_user: dict = Depends(get_current_user),
+    negocio_id: str = Query(None, description="Filtrar por negocio"),
+):
     supabase = get_supabase()
-    result = (
+    q = (
         supabase.table("benchmark_reports")
-        .select("id,nome,status,competitor_ids,parametros,resumo,criado_em,concluido_em,erro_msg")
+        .select("id,negocio_id,nome,status,competitor_ids,parametros,resumo,criado_em,concluido_em,erro_msg,negocios(nome)")
         .eq("workspace_id", current_user["workspace_id"])
         .order("criado_em", desc=True)
         .limit(50)
-        .execute()
     )
-    return result.data or []
+    if negocio_id:
+        q = q.eq("negocio_id", negocio_id)
+    return q.execute().data or []
 
 
 @router.get("/reports/{report_id}")

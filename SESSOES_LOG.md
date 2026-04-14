@@ -934,4 +934,11 @@
   - Testar fallback sincrono quando Redis/Celery indisponiveis
   - Validar audit_log novos eventos (benchmark_analyze etc.)
 
+- **Ajuste pos-sessao (2026-04-13):** Isolamento de concorrentes por negocio
+  - Migration `016_benchmark_negocio.sql`: ALTER competitors/benchmark_reports add `negocio_id` NOT NULL (FK negocios ON DELETE CASCADE), com backfill para o primeiro negocio do workspace e exclusao de orfaos; novos indices `idx_competitors_negocio`, `idx_benchmark_reports_negocio`
+  - Backend `schemas.py`: CompetitorCreate e BenchmarkAnalyzeRequest passam a exigir `negocio_id`
+  - Backend `router.py`: helper `_ensure_negocio_pertence` valida ownership; GET /competitors e /reports aceitam filtro `?negocio_id=`; POST /analyze valida que todos os competitor_ids pertencem ao mesmo negocio informado; select inclui join em `negocios(nome)`
+  - Frontend `Benchmark.jsx`: seletor de Negocio no header recarrega tabs automaticamente; CompetitorsTab bloqueia criar sem negocio selecionado; AnalyzeTab envia `negocio_id` junto; PUT de competitor nao altera `negocio_id`
+  - Motivacao: um mesmo workspace/cliente pode ter 2 ou mais negocios distintos, cada um com sua propria concorrencia — compartilhar concorrentes entre negocios vazaria contexto errado nos insights do Gemini
+
 - **Proxima sessao:** Sessao 11 — Monitoramento, Observabilidade e Polimento

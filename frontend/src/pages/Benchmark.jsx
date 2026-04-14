@@ -37,29 +37,54 @@ function StatusBadge({ status }) {
 
 export default function Benchmark() {
   const [tab, setTab] = useState('concorrentes')
+  const [negocios, setNegocios] = useState([])
+  const [negocioId, setNegocioId] = useState('')
   const [competitors, setCompetitors] = useState([])
   const [reports, setReports] = useState([])
   const [selectedReport, setSelectedReport] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const loadCompetitors = useCallback(async () => {
+  const loadNegocios = useCallback(async () => {
     try {
-      const res = await api.get('/benchmark/competitors')
+      const res = await api.get('/negocios')
+      const list = res.data || []
+      setNegocios(list)
+      if (!negocioId && list.length > 0) {
+        setNegocioId(list[0].id)
+      }
+    } catch {}
+  }, [negocioId])
+
+  const loadCompetitors = useCallback(async () => {
+    if (!negocioId) {
+      setCompetitors([])
+      return
+    }
+    try {
+      const res = await api.get('/benchmark/competitors', { params: { negocio_id: negocioId } })
       setCompetitors(res.data || [])
     } catch (e) {
       if (e.response?.status === 403) {
         setError(e.response?.data?.detail || 'Benchmark indisponível no seu plano.')
       }
     }
-  }, [])
+  }, [negocioId])
 
   const loadReports = useCallback(async () => {
+    if (!negocioId) {
+      setReports([])
+      return
+    }
     try {
-      const res = await api.get('/benchmark/reports')
+      const res = await api.get('/benchmark/reports', { params: { negocio_id: negocioId } })
       setReports(res.data || [])
     } catch {}
-  }, [])
+  }, [negocioId])
+
+  useEffect(() => {
+    loadNegocios()
+  }, [loadNegocios])
 
   useEffect(() => {
     ;(async () => {
@@ -75,12 +100,39 @@ export default function Benchmark() {
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
-      <header className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Benchmark</h1>
-        <p className="text-sm text-gray-500">
-          Pesquise e monitore concorrentes. Obtenha insights acionáveis com IA.
-        </p>
+      <header className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Benchmark</h1>
+          <p className="text-sm text-gray-500">
+            Pesquise e monitore concorrentes por negócio. Insights com IA.
+          </p>
+        </div>
+        {negocios.length > 0 && (
+          <div>
+            <label className="block text-xs text-gray-600 mb-1">Negócio</label>
+            <select
+              value={negocioId}
+              onChange={(e) => {
+                setNegocioId(e.target.value)
+                setSelectedReport(null)
+              }}
+              className="border border-gray-300 rounded px-3 py-2 text-sm bg-white min-w-[220px]"
+            >
+              {negocios.map((n) => (
+                <option key={n.id} value={n.id}>
+                  {n.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </header>
+
+      {negocios.length === 0 && !loading && (
+        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
+          Cadastre um negócio em <strong>Negócios</strong> antes de usar o Benchmark.
+        </div>
+      )}
 
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
@@ -107,12 +159,14 @@ export default function Benchmark() {
       {tab === 'concorrentes' && (
         <CompetitorsTab
           competitors={competitors}
+          negocioId={negocioId}
           reload={loadCompetitors}
         />
       )}
       {tab === 'analise' && (
         <AnalyzeTab
           competitors={competitors}
+          negocioId={negocioId}
           onDone={async () => {
             await loadReports()
             setTab('relatorios')
@@ -139,10 +193,14 @@ export default function Benchmark() {
 }
 
 
-function CompetitorsTab({ competitors, reload }) {
+function CompetitorsTab({ competitors, negocioId, reload }) {
   const [form, setForm] = useState(null)
 
-  const openNew = () =>
+  const openNew = () => {
+    if (!negocioId) {
+      alert('Selecione um negócio antes de cadastrar concorrentes.')
+      return
+    }
     setForm({
       nome: '',
       segmento: '',
@@ -153,16 +211,20 @@ function CompetitorsTab({ competitors, reload }) {
       tiktok_handle: '',
       palavras_chave: '',
     })
+  }
 
   const submit = async () => {
+    const { negocios: _n, ...rest } = form
     const payload = {
-      ...form,
+      ...rest,
+      negocio_id: form.negocio_id || negocioId,
       palavras_chave: form.palavras_chave
         ? form.palavras_chave.split(',').map((s) => s.trim()).filter(Boolean)
         : [],
     }
     try {
       if (form.id) {
+        delete payload.negocio_id // PUT nao suporta trocar de negocio
         await api.put(`/benchmark/competitors/${form.id}`, payload)
       } else {
         await api.post('/benchmark/competitors', payload)
@@ -318,7 +380,7 @@ function CompetitorsTab({ competitors, reload }) {
 }
 
 
-function AnalyzeTab({ competitors, onDone }) {
+function AnalyzeTab({ competitors, negocioId, onDone }) {
   const [nome, setNome] = useState('')
   const [selected, setSelected] = useState([])
   const [redes, setRedes] = useState(['instagram', 'youtube', 'tiktok'])
@@ -331,10 +393,11 @@ function AnalyzeTab({ competitors, onDone }) {
     setList(list.includes(id) ? list.filter((x) => x !== id) : [...list, id])
 
   const submit = async () => {
-    if (!nome.trim() || selected.length === 0) return
+    if (!nome.trim() || selected.length === 0 || !negocioId) return
     setSubmitting(true)
     try {
       await api.post('/benchmark/analyze', {
+        negocio_id: negocioId,
         nome: nome.trim(),
         competitor_ids: selected,
         redes,
