@@ -50,6 +50,14 @@ celery_app.conf.update(
             "task": "modules.ads_manager.tasks.sync_meta_campaigns_task",
             "schedule": 86400.0,  # 24h
         },
+        "sync-google-campaigns-daily": {
+            "task": "modules.ads_manager.tasks.sync_google_campaigns_task",
+            "schedule": 86400.0,  # 24h
+        },
+        "sync-tiktok-campaigns-daily": {
+            "task": "modules.ads_manager.tasks.sync_tiktok_campaigns_task",
+            "schedule": 86400.0,  # 24h
+        },
         "run-ad-rules-hourly": {
             "task": "modules.ads_manager.tasks.run_ad_rules_task",
             "schedule": 3600.0,  # 1h

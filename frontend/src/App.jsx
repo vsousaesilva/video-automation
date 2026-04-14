@@ -19,6 +19,7 @@ import Contacts from './pages/Contacts'
 import ContactDetail from './pages/ContactDetail'
 import Funnel from './pages/Funnel'
 import Ads from './pages/Ads'
+import AdsOAuthCallback from './pages/AdsOAuthCallback'
 import TermosDeUso from './pages/TermosDeUso'
 import PoliticaPrivacidade from './pages/PoliticaPrivacidade'
 
@@ -75,6 +76,7 @@ export default function App() {
         <Route path="crm/contacts/:id" element={<ContactDetail />} />
         <Route path="crm/funnel" element={<Funnel />} />
         <Route path="ads" element={<Ads />} />
+        <Route path="ads/oauth/:plataforma/callback" element={<AdsOAuthCallback />} />
         <Route path="settings" element={<Settings />} />
         <Route path="settings/billing" element={<Billing />} />
       </Route>

@@ -5,9 +5,26 @@ import api from '../lib/api'
 const TABS = [
   { id: 'campanhas', label: 'Campanhas' },
   { id: 'metricas', label: 'Métricas' },
+  { id: 'comparativo', label: 'Comparativo' },
   { id: 'contas', label: 'Contas' },
   { id: 'regras', label: 'Regras' },
 ]
+
+const PLATAFORMAS = [
+  { id: '', label: 'Todas', color: 'bg-gray-100 text-gray-700' },
+  { id: 'meta', label: 'Meta', color: 'bg-blue-100 text-blue-700' },
+  { id: 'google', label: 'Google', color: 'bg-yellow-100 text-yellow-800' },
+  { id: 'tiktok', label: 'TikTok', color: 'bg-pink-100 text-pink-700' },
+]
+
+function PlatformBadge({ plataforma }) {
+  const p = PLATAFORMAS.find((x) => x.id === plataforma) || PLATAFORMAS[0]
+  return (
+    <span className={`text-xs px-2 py-0.5 rounded font-medium ${p.color}`}>
+      {plataforma ? plataforma.toUpperCase() : '—'}
+    </span>
+  )
+}
 
 function formatBRL(cents) {
   const v = (cents || 0) / 100
@@ -31,9 +48,11 @@ function StatusBadge({ status }) {
 export default function Ads() {
   const navigate = useNavigate()
   const [tab, setTab] = useState('campanhas')
+  const [plataforma, setPlataforma] = useState('')
   const [accounts, setAccounts] = useState([])
   const [campaigns, setCampaigns] = useState([])
   const [metrics, setMetrics] = useState(null)
+  const [crossPlatform, setCrossPlatform] = useState(null)
   const [rules, setRules] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -51,15 +70,24 @@ export default function Ads() {
 
   const loadCampaigns = useCallback(async () => {
     try {
-      const res = await api.get('/ads/campaigns')
+      const params = plataforma ? { plataforma } : {}
+      const res = await api.get('/ads/campaigns', { params })
       setCampaigns(res.data || [])
     } catch {}
-  }, [])
+  }, [plataforma])
 
   const loadMetrics = useCallback(async () => {
     try {
-      const res = await api.get('/ads/metrics')
+      const params = plataforma ? { plataforma } : {}
+      const res = await api.get('/ads/metrics', { params })
       setMetrics(res.data)
+    } catch {}
+  }, [plataforma])
+
+  const loadCrossPlatform = useCallback(async () => {
+    try {
+      const res = await api.get('/ads/metrics/cross-platform')
+      setCrossPlatform(res.data)
     } catch {}
   }, [])
 
@@ -72,10 +100,14 @@ export default function Ads() {
 
   useEffect(() => {
     setLoading(true)
-    Promise.all([loadAccounts(), loadCampaigns(), loadMetrics(), loadRules()]).finally(() =>
-      setLoading(false),
-    )
-  }, [loadAccounts, loadCampaigns, loadMetrics, loadRules])
+    Promise.all([
+      loadAccounts(),
+      loadCampaigns(),
+      loadMetrics(),
+      loadCrossPlatform(),
+      loadRules(),
+    ]).finally(() => setLoading(false))
+  }, [loadAccounts, loadCampaigns, loadMetrics, loadCrossPlatform, loadRules])
 
   async function handleSync(accountId) {
     try {
@@ -127,16 +159,33 @@ export default function Ads() {
       <header className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Ads Manager</h1>
-          <p className="text-sm text-gray-500">Meta Ads (Facebook + Instagram)</p>
+          <p className="text-sm text-gray-500">Meta · Google · TikTok Ads</p>
         </div>
-        {accounts.length === 0 && !loading && (
-          <button
-            onClick={() => setTab('contas')}
-            className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-          >
-            Vincular primeira conta
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          <div className="flex gap-1 bg-gray-100 rounded p-1">
+            {PLATAFORMAS.map((p) => (
+              <button
+                key={p.id || 'all'}
+                onClick={() => setPlataforma(p.id)}
+                className={`px-3 py-1 text-xs rounded transition ${
+                  plataforma === p.id
+                    ? 'bg-white shadow text-gray-900 font-medium'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+          {accounts.length === 0 && !loading && (
+            <button
+              onClick={() => setTab('contas')}
+              className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+            >
+              Vincular primeira conta
+            </button>
+          )}
+        </div>
       </header>
 
       <nav className="flex gap-6 border-b mb-6">
@@ -161,6 +210,7 @@ export default function Ads() {
         <CampaignsTab campaigns={campaigns} onAction={handleAction} />
       )}
       {!loading && tab === 'metricas' && <MetricsTab metrics={metrics} />}
+      {!loading && tab === 'comparativo' && <CrossPlatformTab data={crossPlatform} />}
       {!loading && tab === 'contas' && (
         <AccountsTab
           accounts={accounts}
@@ -189,6 +239,7 @@ function CampaignsTab({ campaigns, onAction }) {
         <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
           <tr>
             <th className="px-4 py-3">Campanha</th>
+            <th className="px-4 py-3">Plataforma</th>
             <th className="px-4 py-3">Objetivo</th>
             <th className="px-4 py-3">Status</th>
             <th className="px-4 py-3">Orçamento diário</th>
@@ -200,6 +251,9 @@ function CampaignsTab({ campaigns, onAction }) {
           {campaigns.map((c) => (
             <tr key={c.id} className="border-t">
               <td className="px-4 py-3 font-medium">{c.nome}</td>
+              <td className="px-4 py-3">
+                <PlatformBadge plataforma={c.ad_accounts?.plataforma} />
+              </td>
               <td className="px-4 py-3 text-gray-600">{c.objetivo || '—'}</td>
               <td className="px-4 py-3">
                 <StatusBadge status={c.status} />
@@ -280,20 +334,95 @@ function MetricsTab({ metrics }) {
 }
 
 // ============================================================
+// Cross-platform (comparativo)
+// ============================================================
+function CrossPlatformTab({ data }) {
+  if (!data || !data.plataformas?.length) {
+    return <p className="text-gray-500">Sem dados para comparar. Vincule contas e aguarde o sync.</p>
+  }
+  const maxGasto = Math.max(1, ...data.plataformas.map((p) => p.gasto_centavos || 0))
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {data.plataformas.map((p) => (
+          <div key={p.plataforma} className="bg-white rounded shadow p-4">
+            <div className="flex items-center justify-between mb-3">
+              <PlatformBadge plataforma={p.plataforma} />
+              <span className="text-xs text-gray-500">
+                {((p.gasto_centavos / maxGasto) * 100).toFixed(0)}% do gasto
+              </span>
+            </div>
+            <p className="text-2xl font-bold">{formatBRL(p.gasto_centavos)}</p>
+            <p className="text-xs text-gray-500 mb-4">Gasto no período</p>
+            <div className="space-y-1 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Impressões</span>
+                <span>{(p.impressoes || 0).toLocaleString('pt-BR')}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Cliques</span>
+                <span>{(p.cliques || 0).toLocaleString('pt-BR')}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Conversões</span>
+                <span>{(p.conversoes || 0).toLocaleString('pt-BR')}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">CPA</span>
+                <span>{formatBRL(p.cpa_centavos)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">ROAS</span>
+                <span>{(p.roas || 0).toFixed(2)}x</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">CTR</span>
+                <span>{(p.ctr || 0).toFixed(2)}%</span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="bg-white rounded shadow p-4">
+        <h3 className="text-sm font-medium mb-3">Gasto por plataforma</h3>
+        <div className="space-y-2">
+          {data.plataformas.map((p) => (
+            <div key={p.plataforma} className="flex items-center gap-3">
+              <div className="w-20 text-xs uppercase tracking-wide text-gray-500">{p.plataforma}</div>
+              <div className="flex-1 h-6 bg-gray-100 rounded overflow-hidden">
+                <div
+                  className="h-full bg-indigo-500"
+                  style={{ width: `${((p.gasto_centavos || 0) / maxGasto) * 100}%` }}
+                />
+              </div>
+              <div className="w-28 text-right text-sm font-medium">{formatBRL(p.gasto_centavos)}</div>
+            </div>
+          ))}
+        </div>
+        <p className="text-xs text-gray-400 mt-3">
+          {data.periodo?.desde} → {data.periodo?.ate}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+// ============================================================
 // Contas
 // ============================================================
 function AccountsTab({ accounts, onConnect, onSync, onDisconnect }) {
   const [showModal, setShowModal] = useState(false)
-  const [form, setForm] = useState({ external_id: '', nome: '', access_token: '' })
+  const [form, setForm] = useState({ plataforma: 'meta', external_id: '', nome: '', access_token: '' })
   const [submitting, setSubmitting] = useState(false)
 
   async function submit(e) {
     e.preventDefault()
     setSubmitting(true)
     try {
-      await api.post('/ads/accounts/connect', { ...form, plataforma: 'meta' })
+      await api.post('/ads/accounts/connect', form)
       setShowModal(false)
-      setForm({ external_id: '', nome: '', access_token: '' })
+      setForm({ plataforma: 'meta', external_id: '', nome: '', access_token: '' })
       await onConnect()
     } catch (e) {
       alert('Falha ao vincular: ' + (e.response?.data?.detail || e.message))
@@ -302,14 +431,42 @@ function AccountsTab({ accounts, onConnect, onSync, onDisconnect }) {
     }
   }
 
+  async function startOAuth(plataforma) {
+    const redirect_uri = `${window.location.origin}/ads/oauth/callback`
+    try {
+      const res = await api.get(`/ads/oauth/${plataforma}/url`, { params: { redirect_uri } })
+      if (res.data?.url) window.location.href = res.data.url
+    } catch (e) {
+      alert('Falha ao iniciar OAuth: ' + (e.response?.data?.detail || e.message))
+    }
+  }
+
   return (
     <div>
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-end mb-4 gap-2 flex-wrap">
+        <button
+          onClick={() => startOAuth('meta')}
+          className="px-3 py-2 text-sm rounded bg-blue-600 text-white hover:bg-blue-700"
+        >
+          Conectar Meta
+        </button>
+        <button
+          onClick={() => startOAuth('google')}
+          className="px-3 py-2 text-sm rounded bg-yellow-500 text-white hover:bg-yellow-600"
+        >
+          Conectar Google
+        </button>
+        <button
+          onClick={() => startOAuth('tiktok')}
+          className="px-3 py-2 text-sm rounded bg-pink-600 text-white hover:bg-pink-700"
+        >
+          Conectar TikTok
+        </button>
         <button
           onClick={() => setShowModal(true)}
-          className="px-4 py-2 bg-indigo-600 text-white text-sm rounded hover:bg-indigo-700"
+          className="px-3 py-2 bg-indigo-600 text-white text-sm rounded hover:bg-indigo-700"
         >
-          + Vincular conta Meta
+          + Vincular manualmente
         </button>
       </div>
 
@@ -352,14 +509,28 @@ function AccountsTab({ accounts, onConnect, onSync, onDisconnect }) {
             onSubmit={submit}
             className="bg-white rounded shadow-xl p-6 w-full max-w-md space-y-4"
           >
-            <h3 className="text-lg font-bold">Vincular conta Meta Ads</h3>
+            <h3 className="text-lg font-bold">Vincular conta de anúncios</h3>
             <p className="text-xs text-gray-500">
-              Informe o Ad Account ID (formato <code>act_12345</code>) e o access token com escopo
-              <code> ads_management, ads_read</code>.
+              Selecione a plataforma e informe o ID da conta + access token.
             </p>
+            <select
+              value={form.plataforma}
+              onChange={(e) => setForm({ ...form, plataforma: e.target.value })}
+              className="w-full border rounded px-3 py-2 text-sm"
+            >
+              <option value="meta">Meta Ads (act_12345)</option>
+              <option value="google">Google Ads (customer_id)</option>
+              <option value="tiktok">TikTok Ads (advertiser_id)</option>
+            </select>
             <input
               required
-              placeholder="act_1234567890"
+              placeholder={
+                form.plataforma === 'meta'
+                  ? 'act_1234567890'
+                  : form.plataforma === 'google'
+                  ? '1234567890 (customer_id)'
+                  : '7012345678900 (advertiser_id)'
+              }
               value={form.external_id}
               onChange={(e) => setForm({ ...form, external_id: e.target.value })}
               className="w-full border rounded px-3 py-2 text-sm"

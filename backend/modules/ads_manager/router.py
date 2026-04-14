@@ -1,16 +1,17 @@
 """
-Ads Manager — Meta Ads (Facebook + Instagram).
+Ads Manager — Meta / Google / TikTok Ads (cross-platform).
 
 Endpoints:
-  GET    /ads/oauth/meta/url                — URL de inicio do OAuth Meta
-  POST   /ads/accounts/connect              — vincular conta Meta Ads (apos OAuth)
-  GET    /ads/accounts                      — listar contas vinculadas
+  GET    /ads/oauth/{plataforma}/url        — URL de inicio do OAuth (meta|google|tiktok)
+  POST   /ads/oauth/{plataforma}/callback   — troca code por token e vincula conta
+  POST   /ads/accounts/connect              — vincular conta manualmente (token direto)
+  GET    /ads/accounts                      — listar contas (filtro por plataforma)
   DELETE /ads/accounts/{id}                 — desvincular conta
-  POST   /ads/accounts/{id}/sync            — disparar sync manual
-  GET    /ads/campaigns                     — listar campanhas
+  POST   /ads/accounts/{id}/sync            — disparar sync manual (roteado por plataforma)
+  GET    /ads/campaigns                     — listar campanhas (cross-platform)
   POST   /ads/campaigns/{id}/action         — pause / activate
   PATCH  /ads/campaigns/{id}/budget         — ajustar orcamento
-  GET    /ads/metrics                       — metricas agregadas
+  GET    /ads/metrics                       — metricas agregadas (filtro plataforma)
   GET    /ads/rules                         — listar regras
   POST   /ads/rules                         — criar regra
   PUT    /ads/rules/{id}                    — atualizar regra
@@ -52,20 +53,106 @@ def _ensure_pro_plan(workspace_id: str) -> None:
         )
 
 
+VALID_PLATFORMS = {"meta", "google", "tiktok"}
+
+
+def _get_service(plataforma: str):
+    """Retorna o modulo de servico correspondente a plataforma."""
+    if plataforma == "meta":
+        from modules.ads_manager.services import meta_ads as svc
+        return svc
+    if plataforma == "google":
+        from modules.ads_manager.services import google_ads as svc
+        return svc
+    if plataforma == "tiktok":
+        from modules.ads_manager.services import tiktok_ads as svc
+        return svc
+    raise HTTPException(400, f"Plataforma '{plataforma}' nao suportada")
+
+
 # ============================================================
 # OAuth
 # ============================================================
 
-@router.get("/oauth/meta/url")
-async def meta_oauth_url(
-    redirect_uri: str = Query(..., description="URL de callback registrada no app Meta"),
+@router.get("/oauth/{plataforma}/url")
+async def oauth_url(
+    plataforma: str,
+    redirect_uri: str = Query(..., description="URL de callback registrada no app da plataforma"),
     current_user: dict = Depends(get_current_user),
 ):
+    if plataforma not in VALID_PLATFORMS:
+        raise HTTPException(400, f"Plataforma invalida: {plataforma}")
     _ensure_pro_plan(current_user["workspace_id"])
-    from modules.ads_manager.services.meta_ads import build_oauth_url
     import secrets
     state = secrets.token_urlsafe(16)
-    return {"url": build_oauth_url(redirect_uri, state), "state": state}
+    svc = _get_service(plataforma)
+    return {"url": svc.build_oauth_url(redirect_uri, state), "state": state, "plataforma": plataforma}
+
+
+@router.post("/oauth/{plataforma}/callback")
+async def oauth_callback(
+    plataforma: str,
+    code: str = Query(...),
+    redirect_uri: str = Query(""),
+    external_id: str = Query("", description="Opcional: ad_account/customer/advertiser id"),
+    current_user: dict = Depends(get_current_user),
+):
+    """Troca code por access_token e vincula a conta."""
+    if plataforma not in VALID_PLATFORMS:
+        raise HTTPException(400, f"Plataforma invalida: {plataforma}")
+    _ensure_pro_plan(current_user["workspace_id"])
+    svc = _get_service(plataforma)
+    supabase = get_supabase()
+
+    try:
+        if plataforma == "meta":
+            data = await svc.exchange_code_for_token(code, redirect_uri)
+        elif plataforma == "google":
+            data = await svc.exchange_code_for_token(code, redirect_uri)
+        else:  # tiktok
+            data = await svc.exchange_code_for_token(code)
+    except Exception as e:
+        raise HTTPException(502, f"OAuth falhou: {e}")
+
+    access_token = data.get("access_token")
+    if not access_token:
+        raise HTTPException(502, "Token nao retornado pela plataforma")
+
+    expires_in = int(data.get("expires_in", 0) or 0)
+    expira_em = (
+        (datetime.now(timezone.utc) + timedelta(seconds=expires_in)).isoformat()
+        if expires_in
+        else None
+    )
+    refresh_token = data.get("refresh_token")
+
+    ext = external_id
+    if not ext:
+        # TikTok retorna advertiser_ids diretamente
+        ids = data.get("advertiser_ids") or []
+        if ids:
+            ext = str(ids[0])
+    if not ext:
+        raise HTTPException(400, "external_id nao fornecido; informe via query param apos escolher a conta")
+
+    row = {
+        "workspace_id": current_user["workspace_id"],
+        "plataforma": plataforma,
+        "external_id": ext,
+        "access_token_encrypted": encrypt_value(access_token),
+        "refresh_token_encrypted": encrypt_value(refresh_token) if refresh_token else None,
+        "token_expira_em": expira_em,
+        "status": "ativo",
+    }
+    result = (
+        supabase.table("ad_accounts")
+        .upsert(row, on_conflict="workspace_id,plataforma,external_id")
+        .execute()
+    )
+    out = result.data[0] if result.data else row
+    out.pop("access_token_encrypted", None)
+    out.pop("refresh_token_encrypted", None)
+    return out
 
 
 # ============================================================
@@ -108,16 +195,20 @@ async def connect_account(
 
 
 @router.get("/accounts")
-async def list_accounts(current_user: dict = Depends(get_current_user)):
+async def list_accounts(
+    current_user: dict = Depends(get_current_user),
+    plataforma: str = Query(None, description="Filtrar por plataforma (meta|google|tiktok)"),
+):
     supabase = get_supabase()
-    result = (
+    q = (
         supabase.table("ad_accounts")
         .select("id,plataforma,external_id,nome,moeda,fuso,status,ultimo_sync,criado_em")
         .eq("workspace_id", current_user["workspace_id"])
         .order("criado_em", desc=True)
-        .execute()
     )
-    return result.data or []
+    if plataforma:
+        q = q.eq("plataforma", plataforma)
+    return q.execute().data or []
 
 
 @router.put("/accounts/{account_id}")
@@ -182,11 +273,9 @@ async def sync_account(
     if not acct.data:
         raise HTTPException(404, "Conta nao encontrada")
     row = acct.data[0]
-    if row["plataforma"] != "meta":
-        raise HTTPException(400, f"Sync ainda nao suportado para {row['plataforma']}")
-    from modules.ads_manager.services.meta_ads import sync_campaigns
-    result = await sync_campaigns(row)
-    return {"conta_id": account_id, **result}
+    svc = _get_service(row["plataforma"])
+    result = await svc.sync_campaigns(row)
+    return {"conta_id": account_id, "plataforma": row["plataforma"], **result}
 
 
 # ============================================================
@@ -197,17 +286,20 @@ async def sync_account(
 async def list_campaigns(
     current_user: dict = Depends(get_current_user),
     ad_account_id: str = Query(None),
+    plataforma: str = Query(None, description="Filtrar por plataforma"),
     status: str = Query(None),
 ):
     supabase = get_supabase()
     q = (
         supabase.table("campaigns")
-        .select("*, ad_accounts(id, nome, plataforma, moeda)")
+        .select("*, ad_accounts!inner(id, nome, plataforma, moeda)")
         .eq("workspace_id", current_user["workspace_id"])
         .order("atualizado_em", desc=True)
     )
     if ad_account_id:
         q = q.eq("ad_account_id", ad_account_id)
+    if plataforma:
+        q = q.eq("ad_accounts.plataforma", plataforma)
     if status:
         q = q.eq("status", status)
     return q.execute().data or []
@@ -223,7 +315,7 @@ async def campaign_action(
     supabase = get_supabase()
     camp = (
         supabase.table("campaigns")
-        .select("*")
+        .select("*, ad_accounts(plataforma)")
         .eq("id", campaign_id)
         .eq("workspace_id", current_user["workspace_id"])
         .limit(1)
@@ -231,11 +323,13 @@ async def campaign_action(
     )
     if not camp.data:
         raise HTTPException(404, "Campanha nao encontrada")
-    from modules.ads_manager.services.meta_ads import update_campaign_status
-    ok = await update_campaign_status(camp.data[0], body.action)
+    row = camp.data[0]
+    plataforma = (row.get("ad_accounts") or {}).get("plataforma", "meta")
+    svc = _get_service(plataforma)
+    ok = await svc.update_campaign_status(row, body.action)
     if not ok:
-        raise HTTPException(502, "Falha ao comunicar com o Meta Ads")
-    return {"detail": f"Campanha {body.action} aplicado", "campaign_id": campaign_id}
+        raise HTTPException(502, f"Falha ao comunicar com {plataforma}")
+    return {"detail": f"Campanha {body.action} aplicado", "campaign_id": campaign_id, "plataforma": plataforma}
 
 
 @router.patch("/campaigns/{campaign_id}/budget")
@@ -248,7 +342,7 @@ async def campaign_budget(
     supabase = get_supabase()
     camp = (
         supabase.table("campaigns")
-        .select("*")
+        .select("*, ad_accounts(plataforma)")
         .eq("id", campaign_id)
         .eq("workspace_id", current_user["workspace_id"])
         .limit(1)
@@ -256,15 +350,17 @@ async def campaign_budget(
     )
     if not camp.data:
         raise HTTPException(404, "Campanha nao encontrada")
-    from modules.ads_manager.services.meta_ads import update_campaign_budget
-    ok = await update_campaign_budget(
-        camp.data[0],
+    row = camp.data[0]
+    plataforma = (row.get("ad_accounts") or {}).get("plataforma", "meta")
+    svc = _get_service(plataforma)
+    ok = await svc.update_campaign_budget(
+        row,
         orcamento_diario_centavos=body.orcamento_diario_centavos,
         orcamento_total_centavos=body.orcamento_total_centavos,
     )
     if not ok:
-        raise HTTPException(502, "Falha ao comunicar com o Meta Ads")
-    return {"detail": "Orcamento atualizado"}
+        raise HTTPException(502, f"Falha ao comunicar com {plataforma}")
+    return {"detail": "Orcamento atualizado", "plataforma": plataforma}
 
 
 # ============================================================
@@ -278,6 +374,7 @@ async def metrics_summary(
     ate: str = Query(None),
     campaign_id: str = Query(None),
     ad_account_id: str = Query(None),
+    plataforma: str = Query(None),
 ):
     """Agrega metricas por dia para graficos + totais."""
     supabase = get_supabase()
@@ -287,6 +384,27 @@ async def metrics_summary(
         desde = (date.today() - timedelta(days=30)).isoformat()
     if not ate:
         ate = date.today().isoformat()
+
+    # Filtro por plataforma: buscar ad_account_ids da plataforma
+    plataforma_account_ids: list[str] | None = None
+    if plataforma:
+        accs = (
+            supabase.table("ad_accounts")
+            .select("id")
+            .eq("workspace_id", workspace_id)
+            .eq("plataforma", plataforma)
+            .execute()
+            .data or []
+        )
+        plataforma_account_ids = [a["id"] for a in accs]
+        if not plataforma_account_ids:
+            return {
+                "periodo": {"desde": desde, "ate": ate},
+                "totais": {"impressoes": 0, "cliques": 0, "conversoes": 0,
+                           "gasto_centavos": 0, "receita_centavos": 0,
+                           "cpa_centavos": 0, "roas": 0.0, "ctr": 0.0},
+                "serie": [],
+            }
 
     q = (
         supabase.table("ad_metrics_daily")
@@ -300,6 +418,8 @@ async def metrics_summary(
         q = q.eq("campaign_id", campaign_id)
     if ad_account_id:
         q = q.eq("ad_account_id", ad_account_id)
+    if plataforma_account_ids:
+        q = q.in_("ad_account_id", plataforma_account_ids)
     rows = q.execute().data or []
 
     # Agrupar por dia
@@ -332,6 +452,65 @@ async def metrics_summary(
         },
         "serie": sorted(por_dia.values(), key=lambda x: x["data"]),
     }
+
+
+@router.get("/metrics/cross-platform")
+async def metrics_cross_platform(
+    current_user: dict = Depends(get_current_user),
+    desde: str = Query(None),
+    ate: str = Query(None),
+):
+    """Compara metricas agregadas por plataforma (meta/google/tiktok)."""
+    supabase = get_supabase()
+    workspace_id = current_user["workspace_id"]
+
+    if not desde:
+        desde = (date.today() - timedelta(days=30)).isoformat()
+    if not ate:
+        ate = date.today().isoformat()
+
+    accounts = (
+        supabase.table("ad_accounts")
+        .select("id,plataforma")
+        .eq("workspace_id", workspace_id)
+        .execute()
+        .data or []
+    )
+    plat_map: dict[str, str] = {a["id"]: a["plataforma"] for a in accounts}
+
+    rows = (
+        supabase.table("ad_metrics_daily")
+        .select("*")
+        .eq("workspace_id", workspace_id)
+        .gte("data", desde)
+        .lte("data", ate)
+        .execute()
+        .data or []
+    )
+
+    por_plataforma: dict[str, dict[str, float]] = {}
+    for r in rows:
+        plat = plat_map.get(r.get("ad_account_id"), "desconhecida")
+        bucket = por_plataforma.setdefault(plat, {
+            "plataforma": plat, "impressoes": 0, "cliques": 0,
+            "conversoes": 0, "gasto_centavos": 0, "receita_centavos": 0,
+        })
+        for k in ("impressoes", "cliques", "conversoes", "gasto_centavos", "receita_centavos"):
+            bucket[k] = (bucket.get(k) or 0) + (r.get(k) or 0)
+
+    resultado = []
+    for plat, v in por_plataforma.items():
+        gasto = v["gasto_centavos"] or 0
+        conv = v["conversoes"] or 0
+        rec = v["receita_centavos"] or 0
+        impr = v["impressoes"] or 0
+        v["cpa_centavos"] = (gasto // conv) if conv else 0
+        v["roas"] = round((rec / gasto), 4) if gasto else 0.0
+        v["ctr"] = round((v["cliques"] / impr * 100), 2) if impr else 0.0
+        resultado.append(v)
+
+    resultado.sort(key=lambda x: x.get("gasto_centavos", 0), reverse=True)
+    return {"periodo": {"desde": desde, "ate": ate}, "plataformas": resultado}
 
 
 # ============================================================

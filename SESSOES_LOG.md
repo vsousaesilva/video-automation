@@ -728,3 +728,120 @@
   - Validar beat schedule rodando sync diario
 
 - **Proxima sessao:** Sessao 9 — Ads Manager (Google Ads + TikTok Ads)
+
+---
+
+## Sessao 9 — Ads Manager (Google Ads + TikTok Ads)
+- **Data:** 2026-04-13
+- **Status:** Concluida
+- **O que foi feito:**
+
+  **Backend — core/config.py:**
+  - Adicionados settings: `google_ads_client_id`, `google_ads_client_secret`, `google_ads_developer_token`, `google_ads_login_customer_id`, `google_ads_api_version` (default v17)
+  - Adicionados settings: `tiktok_ads_app_id`, `tiktok_ads_app_secret`, `tiktok_ads_api_base` (default business-api.tiktok.com/open_api/v1.3)
+
+  **Backend — services/google_ads.py (novo):**
+  - OAuth: `build_oauth_url`, `exchange_code_for_token`, `refresh_access_token` com scope adwords
+  - `_get_valid_token` — renovacao automatica via refresh_token (Google emite access_token curto de 1h; refresh_token de longa duracao)
+  - `sync_campaigns` — GAQL via endpoint `googleAds:searchStream` para campanhas (status, budget, objetivo) + metricas diarias (impressions, clicks, cost_micros, conversions, conversion_value, ctr, avg_cpc)
+  - Conversao micros → centavos (micros/10.000) para valores monetarios Google
+  - `update_campaign_status` — mutate `customers/{id}/campaigns:mutate` com updateMask
+  - `update_campaign_budget` — stub local (Google Ads requer mutate em campaign_budget separado; anotado para refinamento futuro)
+  - Headers incluem `developer-token` e `login-customer-id` (MCC) quando configurado
+
+  **Backend — services/tiktok_ads.py (novo):**
+  - OAuth: `build_oauth_url`, `exchange_code_for_token` via `/oauth2/access_token/`, `list_advertisers`
+  - TikTok retorna `advertiser_ids` no payload do OAuth — usado para pre-preenchimento se nao fornecido
+  - `sync_campaigns` — GET `/campaign/get/` para campanhas + POST `/report/integrated/get/` (BASIC, AUCTION_CAMPAIGN) para metricas dos ultimos 7 dias
+  - Normalizacao de status: STATUS_DISABLE/PAUSED → paused, STATUS_ENABLE/DELIVERY_OK → active
+  - `update_campaign_status` — `/campaign/status/update/` com operation_status ENABLE/DISABLE
+  - `update_campaign_budget` — `/campaign/update/` com budget (em unidades, nao centavos — conversao automatica) + budget_mode DAY/TOTAL
+
+  **Backend — router.py (refatorado):**
+  - Helper `_get_service(plataforma)` — dispatcher que carrega o modulo certo (meta_ads, google_ads, tiktok_ads)
+  - `GET /ads/oauth/{plataforma}/url` — generico, funciona para meta/google/tiktok
+  - `POST /ads/oauth/{plataforma}/callback` — troca code por token e faz upsert em ad_accounts. Suporta external_id via query param (ou extrai de `advertiser_ids` no TikTok)
+  - `GET /ads/accounts?plataforma=` — filtro por plataforma
+  - `POST /ads/accounts/{id}/sync` — roteia por plataforma da conta
+  - `POST /ads/campaigns/{id}/action` — carrega `ad_accounts(plataforma)` via join, roteia
+  - `PATCH /ads/campaigns/{id}/budget` — idem
+  - `GET /ads/campaigns?plataforma=` — filtro cross-platform via join `ad_accounts!inner`
+  - `GET /ads/metrics?plataforma=` — filtro por plataforma (via subquery em ad_account_ids)
+  - `GET /ads/metrics/cross-platform` (novo) — agrega gasto/impressoes/cliques/conversoes/receita por plataforma + calcula CPA/ROAS/CTR de cada uma. Ordenado por gasto
+
+  **Backend — services/rules_engine.py:**
+  - Helper `_platform_service(plataforma)` — mesmo dispatcher
+  - Query de campanhas agora faz join com `ad_accounts(plataforma)`
+  - Em cada campanha avaliada, carrega o servico correto e chama `update_campaign_status`/`update_campaign_budget` da plataforma dela
+  - Resposta inclui `plataforma` em cada acao aplicada
+
+  **Backend — tasks.py:**
+  - Refatorado para helper `_run_sync_for_platform(plataforma, account_id)`
+  - Novas tasks: `sync_google_campaigns_task`, `sync_tiktok_campaigns_task`, `sync_all_ads_task` (executa as 3)
+  - `sync_meta_campaigns_task` mantida por compatibilidade
+
+  **Backend — core/tasks.py:**
+  - Beat schedule: `sync-google-campaigns-daily` (24h), `sync-tiktok-campaigns-daily` (24h) alem do Meta existente
+
+  **Backend — core/middleware.py:**
+  - Audit log: `POST /ads/oauth` → `ads_oauth_callback`; `POST /ads/accounts` → `ads_sync_account` (sync manual)
+
+  **Backend — main.py:** versao bump para 0.7.0
+
+  **Frontend — Ads.jsx:**
+  - Novo state `plataforma` (filtro) + componente `PlatformBadge` (cores por plataforma)
+  - Toggle de plataforma no header (Todas / Meta / Google / TikTok) que filtra campanhas e metricas
+  - Nova aba "Comparativo" com componente `CrossPlatformTab`: 3 cards lado a lado com metricas por plataforma + barras horizontais comparativas de gasto
+  - Tabela de campanhas ganhou coluna "Plataforma" com badge
+  - AccountsTab: 3 botoes coloridos "Conectar Meta/Google/TikTok" que disparam fluxo OAuth via `/ads/oauth/{plat}/url`. Mantem fallback manual com seletor de plataforma no modal (external_id placeholder muda por plataforma)
+
+  **Frontend — AdsOAuthCallback.jsx (novo):**
+  - Pagina de callback em `/ads/oauth/:plataforma/callback`
+  - Le `code` da URL, solicita external_id do usuario (exceto TikTok, que vem no payload), faz POST em `/ads/oauth/{plat}/callback` e redireciona para `/ads`
+
+  **Frontend — App.jsx:**
+  - Rota nova: `ads/oauth/:plataforma/callback` → AdsOAuthCallback
+
+- **Decisoes tomadas:**
+  - Dispatcher por plataforma em 3 camadas (router, rules_engine, tasks) em vez de herdar/abstrair classes — pragmatico dado 3 APIs heterogeneas
+  - Google Ads: versionamento da API em settings (default v17) para facilitar upgrade
+  - Google Ads `update_campaign_budget` documentado como stub — a mutacao real requer alterar o `campaign_budget` vinculado, nao a campaign em si (a ser refinado quando houver conta de teste)
+  - TikTok `budget` e enviado em unidades (nao centavos) — conversao feita no servico
+  - CrossPlatform endpoint nao suporta filtros alem do periodo para manter analise comparativa limpa
+  - Campaign list usa `ad_accounts!inner` no select para permitir filtro por plataforma na coluna do relacionamento
+  - OAuth callback precisa external_id para Meta/Google (o OAuth nao retorna a conta escolhida); para TikTok e extraido do payload (advertiser_ids)
+  - Versao da API 0.6.0 → 0.7.0 marca a extensao do Ads Manager para 3 plataformas
+
+- **Arquivos criados/modificados:**
+  ```
+  Criados:
+  - backend/modules/ads_manager/services/google_ads.py
+  - backend/modules/ads_manager/services/tiktok_ads.py
+  - frontend/src/pages/AdsOAuthCallback.jsx
+
+  Modificados:
+  - backend/core/config.py (settings google_ads_*, tiktok_ads_*)
+  - backend/core/tasks.py (beat schedule google/tiktok)
+  - backend/core/middleware.py (audit ads_oauth_callback, ads_sync_account)
+  - backend/main.py (versao 0.7.0)
+  - backend/modules/ads_manager/router.py (dispatcher multi-plataforma, OAuth generico, cross-platform)
+  - backend/modules/ads_manager/tasks.py (sync_google/tiktok/all)
+  - backend/modules/ads_manager/services/rules_engine.py (roteamento por plataforma)
+  - frontend/src/App.jsx (rota ads/oauth/:plataforma/callback)
+  - frontend/src/pages/Ads.jsx (filtro plataforma, CrossPlatformTab, 3 botoes OAuth, PlatformBadge)
+  ```
+
+- **Pendencias:**
+  - Cadastrar app Google Cloud + habilitar Google Ads API + gerar developer_token (basic access) e configurar OAuth consent screen
+  - Cadastrar app TikTok for Business Developers (business-api) + submeter a review para scopes de leitura/escrita
+  - Configurar credenciais em .env (GOOGLE_ADS_*, TIKTOK_ADS_*)
+  - Refinar `google_ads.update_campaign_budget` para mutar `campaign_budget` resource (requer query prévia do budget_id vinculado)
+  - Testar refresh_token do Google Ads em producao (48h sem uso pode invalidar refresh_tokens de apps em testing)
+  - Testar OAuth callback flow end-to-end para cada plataforma
+  - Validar conversao de micros → centavos no Google com moedas diferentes de BRL
+  - Validar TikTok report endpoint com filtros corretos de campaign_ids (formato da string JSON pode variar por versao)
+  - Validar audit_log com eventos novos (ads_oauth_callback)
+  - Validar beat schedule rodando sync diario para google e tiktok
+  - Atualizar frontend Ads.jsx subtitle mencionando 3 plataformas (feito) + testar UI com dados reais
+
+- **Proxima sessao:** Sessao 10 — Benchmark

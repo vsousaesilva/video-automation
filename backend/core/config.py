@@ -25,6 +25,18 @@ class Settings(BaseSettings):
     meta_access_token: str = ""
     meta_instagram_account_id: str = ""
 
+    # Google Ads
+    google_ads_client_id: str = ""
+    google_ads_client_secret: str = ""
+    google_ads_developer_token: str = ""
+    google_ads_login_customer_id: str = ""  # MCC (manager) opcional
+    google_ads_api_version: str = "v17"
+
+    # TikTok Ads (Marketing API)
+    tiktok_ads_app_id: str = ""
+    tiktok_ads_app_secret: str = ""
+    tiktok_ads_api_base: str = "https://business-api.tiktok.com/open_api/v1.3"
+
     # Telegram
     telegram_bot_token: str = ""
     telegram_webhook_secret: str = ""

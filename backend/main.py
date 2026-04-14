@@ -50,7 +50,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Usina do Tempo",
     description="Plataforma SaaS de automação de vídeos para marketing digital",
-    version="0.6.0",
+    version="0.7.0",
     lifespan=lifespan,
 )
 
@@ -106,7 +106,7 @@ app.include_router(ads_manager_router.router)
 
 @app.get("/health")
 async def health_check():
-    return {"status": "ok", "version": "0.6.0"}
+    return {"status": "ok", "version": "0.7.0"}
 
 
 @app.get("/debug/my-context")

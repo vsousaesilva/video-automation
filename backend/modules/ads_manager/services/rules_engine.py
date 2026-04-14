@@ -44,13 +44,22 @@ def _aggregate_metric(rows: list[dict[str, Any]], metrica: str) -> float:
     return float(sum(r.get(col, 0) or 0 for r in rows))
 
 
-async def execute_rule(rule: dict[str, Any]) -> dict[str, Any]:
-    """Avalia e executa uma regra. Retorna resumo."""
-    from modules.ads_manager.services.meta_ads import (
-        update_campaign_status,
-        update_campaign_budget,
-    )
+def _platform_service(plataforma: str):
+    if plataforma == "meta":
+        from modules.ads_manager.services import meta_ads as svc
+        return svc
+    if plataforma == "google":
+        from modules.ads_manager.services import google_ads as svc
+        return svc
+    if plataforma == "tiktok":
+        from modules.ads_manager.services import tiktok_ads as svc
+        return svc
+    from modules.ads_manager.services import meta_ads as svc
+    return svc
 
+
+async def execute_rule(rule: dict[str, Any]) -> dict[str, Any]:
+    """Avalia e executa uma regra. Retorna resumo. Roteia por plataforma."""
     supabase = get_supabase()
     condicao = rule.get("condicao") or {}
     metrica = condicao.get("metrica")
@@ -70,7 +79,7 @@ async def execute_rule(rule: dict[str, Any]) -> dict[str, Any]:
 
     q = (
         supabase.table("campaigns")
-        .select("*")
+        .select("*, ad_accounts(plataforma)")
         .eq("workspace_id", workspace_id)
     )
     if rule.get("ad_account_id"):
@@ -94,24 +103,28 @@ async def execute_rule(rule: dict[str, Any]) -> dict[str, Any]:
         if not OPERADORES[operador](valor_atual, float(valor)):
             continue
 
+        plataforma = (camp.get("ad_accounts") or {}).get("plataforma", "meta")
+        svc = _platform_service(plataforma)
+
         acao = rule.get("acao")
         params = rule.get("acao_params") or {}
         sucesso = False
         if acao == "pause":
-            sucesso = await update_campaign_status(camp, "pause")
+            sucesso = await svc.update_campaign_status(camp, "pause")
         elif acao == "activate":
-            sucesso = await update_campaign_status(camp, "activate")
+            sucesso = await svc.update_campaign_status(camp, "activate")
         elif acao == "adjust_budget":
             ajuste_pct = float(params.get("ajuste_pct", 0))
             atual = camp.get("orcamento_diario_centavos") or 0
             novo = int(atual * (1 + ajuste_pct / 100))
-            sucesso = await update_campaign_budget(camp, orcamento_diario_centavos=novo)
+            sucesso = await svc.update_campaign_budget(camp, orcamento_diario_centavos=novo)
         elif acao == "notify":
             sucesso = True  # notificacao e registrada abaixo
 
         acoes_aplicadas.append({
             "campaign_id": camp["id"],
             "campaign_nome": camp.get("nome"),
+            "plataforma": plataforma,
             "valor_atual": valor_atual,
             "acao": acao,
             "sucesso": sucesso,
