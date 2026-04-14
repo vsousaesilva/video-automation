@@ -33,7 +33,7 @@ function Nav({ t }) {
   return (
     <header className="relative z-10 max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
       <a href="/" className="flex items-center gap-2 font-bold text-lg">
-        <span className="inline-block w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-fuchsia-500" />
+        <img src="/logo.png" alt="Usina do Tempo" className="w-9 h-9 rounded-lg object-contain" />
         <span>Usina do Tempo</span>
       </a>
       <nav className="hidden md:flex items-center gap-8 text-sm text-slate-600 dark:text-slate-300">

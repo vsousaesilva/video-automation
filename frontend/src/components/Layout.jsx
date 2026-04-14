@@ -41,9 +41,12 @@ export default function Layout() {
     <div className="flex h-screen bg-gray-50 dark:bg-slate-900">
       {/* Sidebar */}
       <aside className="w-64 bg-gray-900 dark:bg-slate-950 text-white flex flex-col h-screen">
-        <div className="p-6 border-b border-gray-700 flex-shrink-0">
-          <h1 className="text-lg font-bold tracking-tight">Usina do Tempo</h1>
-          <p className="text-xs text-gray-400 mt-1">Plataforma de Marketing</p>
+        <div className="p-6 border-b border-gray-700 flex-shrink-0 flex items-center gap-3">
+          <img src="/logo.png" alt="Usina do Tempo" className="w-10 h-10 rounded-lg object-contain bg-white/5 p-1" />
+          <div className="min-w-0">
+            <h1 className="text-lg font-bold tracking-tight truncate">Usina do Tempo</h1>
+            <p className="text-xs text-gray-400 mt-0.5">Plataforma de Marketing</p>
+          </div>
         </div>
 
         <nav className="flex-1 py-4 overflow-y-auto min-h-0">

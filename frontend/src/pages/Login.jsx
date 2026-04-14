@@ -20,12 +20,11 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gray-900 px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-600 mb-4">
-            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <polygon points="23 7 16 12 23 17 23 7" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
-              <rect x="1" y="5" width="15" height="14" rx="2" ry="2" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
-            </svg>
-          </div>
+          <img
+            src="/logo.png"
+            alt="Usina do Tempo"
+            className="mx-auto w-20 h-20 rounded-2xl object-contain bg-white/5 p-2 mb-4 shadow-lg shadow-indigo-900/40"
+          />
           <h1 className="text-2xl font-bold text-white">Usina do Tempo</h1>
           <p className="text-gray-400 mt-2">Acesse sua plataforma de marketing</p>
         </div>
