@@ -69,6 +69,7 @@ app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 # === CORS restritivo ===
 allowed_origins = [
     "https://app.usinadotempo.com.br",
+    "https://lp.usinadotempo.com.br",
     "https://usinadotempo.com.br",
     "https://www.usinadotempo.com.br",
 ]

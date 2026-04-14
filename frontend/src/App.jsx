@@ -30,8 +30,9 @@ function isLandingHost() {
   const host = window.location.hostname
   // Forcar landing via ?landing=1 em qualquer ambiente (util em dev)
   if (new URLSearchParams(window.location.search).has('landing')) return true
-  // Landing em usinadotempo.com.br / www.usinadotempo.com.br (sem `app.`)
-  return host === 'usinadotempo.com.br' || host === 'www.usinadotempo.com.br'
+  // Landing em lp.usinadotempo.com.br (LP de venda da plataforma).
+  // Institucional em usinadotempo.com.br segue em WordPress separado.
+  return host === 'lp.usinadotempo.com.br'
 }
 
 export default function App() {
