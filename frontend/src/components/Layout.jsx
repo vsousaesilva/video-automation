@@ -11,6 +11,7 @@ const navItems = [
   { to: '/content-ai', label: 'Content AI', icon: ContentAIIcon },
   { to: '/crm', label: 'Contatos', icon: ContactsIcon, end: true },
   { to: '/crm/funnel', label: 'Funil', icon: FunnelIcon },
+  { to: '/ads', label: 'An\u00fancios', icon: AdsIcon },
   { to: '/media', label: 'Banco de M\u00eddia', icon: MediaIcon },
   { to: '/history', label: 'Hist\u00f3rico', icon: HistoryIcon },
   { to: '/settings/billing', label: 'Plano', icon: BillingIcon },
@@ -179,6 +180,14 @@ function FunnelIcon() {
   return (
     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+    </svg>
+  )
+}
+
+function AdsIcon() {
+  return (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
     </svg>
   )
 }

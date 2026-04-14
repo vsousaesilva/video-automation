@@ -73,6 +73,13 @@ AUDIT_ROUTES = {
     ("POST", "/crm/deals"): "create_deal",
     ("PUT", "/crm/deals"): "update_deal",
     ("DELETE", "/crm/deals"): "delete_deal",
+    ("POST", "/ads/accounts/connect"): "ads_connect_account",
+    ("DELETE", "/ads/accounts"): "ads_delete_account",
+    ("POST", "/ads/campaigns"): "ads_campaign_action",
+    ("PATCH", "/ads/campaigns"): "ads_campaign_budget",
+    ("POST", "/ads/rules"): "ads_create_rule",
+    ("PUT", "/ads/rules"): "ads_update_rule",
+    ("DELETE", "/ads/rules"): "ads_delete_rule",
 }
 
 

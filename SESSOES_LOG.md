@@ -620,3 +620,111 @@
   - Instalar openpyxl se quiser suporte a Excel: `pip install openpyxl`
 
 - **Proxima sessao:** Sessao 8 — Ads Manager (Meta Ads)
+
+---
+
+## Sessao 8 — Ads Manager (Meta Ads)
+- **Data:** 2026-04-13
+- **Status:** Concluida
+- **O que foi feito:**
+
+  **Migration (014_ads_manager.sql):**
+  - `ad_accounts` — contas de anuncios vinculadas (plataforma, external_id, tokens criptografados, status, ultimo_sync)
+  - `campaigns` — campanhas (objetivo, status, orcamento diario/total, datas, vinculo com ad_account)
+  - `ad_sets` — conjuntos de anuncios (publico_alvo JSONB, orcamento)
+  - `ads` — criativos (criativo JSONB com texto, headline, video_url, cta)
+  - `ad_metrics_daily` — metricas diarias (impressoes, cliques, conversoes, gasto, receita, CTR, CPC, CPA, ROAS)
+  - `ad_rules` — regras de automacao (escopo, condicao JSONB, acao, ativa, ultima_execucao)
+  - Indices otimizados e unique constraints por (ad_account_id, external_id)
+  - RLS habilitado em todas as tabelas com isolamento por workspace
+
+  **Backend — Modulo Ads Manager (modules/ads_manager/):**
+  - `schemas.py` — enums Plataforma (3), StatusAdAccount (3), EscopoRegra (3), AcaoRegra (4); schemas AdAccountConnect, CampaignAction, CampaignBudgetUpdate, RegraCondicao, AdRuleCreate/Update
+  - `router.py` — 13 endpoints:
+    - OAuth: `GET /ads/oauth/meta/url`
+    - Contas: `POST /ads/accounts/connect`, `GET /ads/accounts`, `PUT/DELETE /ads/accounts/{id}`, `POST /ads/accounts/{id}/sync`
+    - Campanhas: `GET /ads/campaigns`, `POST /ads/campaigns/{id}/action`, `PATCH /ads/campaigns/{id}/budget`
+    - Metricas: `GET /ads/metrics` (totais + serie diaria)
+    - Regras: `GET/POST /ads/rules`, `PUT/DELETE /ads/rules/{id}`, `POST /ads/rules/{id}/run`
+  - Helper `_ensure_pro_plan` — bloqueia rotas sensiveis para planos free/starter (403)
+  - `services/meta_ads.py`:
+    - OAuth flow: `build_oauth_url`, `exchange_code_for_token` (short + long-lived tokens)
+    - `list_ad_accounts` — lista contas do token
+    - `sync_campaigns` — sincroniza campanhas e insights dos ultimos 7 dias via Graph API v20.0
+    - `update_campaign_status` / `update_campaign_budget` — acoes na Meta Marketing API
+    - Tokens criptografados via `core.crypto.decrypt_value` (Fernet — Sessao 4)
+    - Tratamento de erros: token invalido marca conta como expirada
+  - `services/rules_engine.py`:
+    - `execute_rule` — avalia condicao (cpa/roas/ctr/gasto/cliques/impressoes) contra janelas de 1-30 dias
+    - Operadores: >, <, >=, <=, ==
+    - Acoes: pause, activate, adjust_budget (com ajuste_pct), notify
+    - Registra ultima_execucao e ultima_acao no banco
+    - `run_all_active_rules` — executa todas as regras ativas
+  - `tasks.py`:
+    - `sync_meta_campaigns_task` — diaria (autodiscover Celery)
+    - `run_ad_rules_task` — horaria
+
+  **Backend — Integracao:**
+  - `main.py` — import ads_manager_router, versao 0.6.0, registrado ads_manager_router.router
+  - `core/middleware.py` — audit log para ads_connect_account, ads_delete_account, ads_campaign_action, ads_campaign_budget, ads_create_rule, ads_update_rule, ads_delete_rule
+  - `core/tasks.py` — autodiscover modules.ads_manager + beat schedule: sync-meta-campaigns-daily (24h), run-ad-rules-hourly (1h)
+
+  **Frontend — Pagina Ads (Ads.jsx):**
+  - 4 tabs: Campanhas, Metricas, Contas, Regras
+  - **Campanhas:** tabela com nome, objetivo, status, orcamento; acoes pausar/ativar inline
+  - **Metricas:** 7 cards (impressoes, cliques, conversoes, gasto, CPA, ROAS, CTR) + grafico de barras diario (gasto)
+  - **Contas:** lista contas vinculadas com sync/desvincular; modal de vincular com external_id + access_token
+  - **Regras:** builder visual "SE metrica operador valor em N dias ENTAO acao"; toggle ativa/pausada; executar agora; historico de ultima execucao
+  - Tratamento de 403 (plano insuficiente) com CTA para upgrade
+  - Uso do axios `api` client com auto-refresh de token
+
+  **Frontend — Navegacao:**
+  - `App.jsx` — rota `/ads`
+  - `Layout.jsx` — link "Anuncios" no sidebar com icone megafone
+
+- **Decisoes tomadas:**
+  - Tokens OAuth criptografados com Fernet (core.crypto) — reuso da Sessao 4
+  - `_ensure_pro_plan` como helper no router em vez de middleware global (permite endpoints de leitura acessiveis a Free)
+  - Sync idempotente via upsert (on_conflict em external_id)
+  - Insights de 7 dias em cada sync (diario via Celery beat)
+  - Meta retorna budgets ja em centavos — armazenados sem conversao
+  - Regras avaliam janelas agregadas (1-30 dias) para evitar ruido diario
+  - `adjust_budget` recebe `ajuste_pct` (negativo reduz, positivo aumenta)
+  - OAuth URL gerada no backend com state token (seguranca CSRF)
+  - Conexao manual (external_id + access_token) tambem permitida para fluxo sem OAuth dialog
+
+- **Arquivos criados/modificados:**
+  ```
+  Criados:
+  - backend/migrations/014_ads_manager.sql
+  - backend/modules/ads_manager/__init__.py
+  - backend/modules/ads_manager/schemas.py
+  - backend/modules/ads_manager/router.py
+  - backend/modules/ads_manager/tasks.py
+  - backend/modules/ads_manager/services/__init__.py
+  - backend/modules/ads_manager/services/meta_ads.py
+  - backend/modules/ads_manager/services/rules_engine.py
+  - frontend/src/pages/Ads.jsx
+
+  Modificados:
+  - backend/main.py (import ads_manager, v0.6.0)
+  - backend/core/middleware.py (audit log ads_*)
+  - backend/core/tasks.py (autodiscover + beat: sync-meta-daily, run-rules-hourly)
+  - frontend/src/App.jsx (rota /ads)
+  - frontend/src/components/Layout.jsx (nav Anuncios + AdsIcon)
+  ```
+
+- **Pendencias:**
+  - Executar migration 014 no Supabase
+  - Cadastrar app Meta for Developers e configurar credenciais (meta_app_id, meta_app_secret)
+  - Submeter app Meta a review (permissoes ads_management, ads_read, business_management)
+  - Configurar redirect_uri no frontend para fluxo OAuth completo
+  - Testar conexao manual (act_*** + access_token) antes do review
+  - Testar sync real com conta Meta de teste
+  - Testar pause/activate + ajuste de orcamento
+  - Testar regras: criar regra "CPA > R$50 em 3d → pausar" e executar
+  - Validar que planos Free/Starter recebem 403 nos endpoints sensiveis
+  - Validar audit_log com eventos ads_*
+  - Validar beat schedule rodando sync diario
+
+- **Proxima sessao:** Sessao 9 — Ads Manager (Google Ads + TikTok Ads)

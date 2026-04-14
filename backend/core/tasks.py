@@ -46,6 +46,14 @@ celery_app.conf.update(
             "task": "core.maintenance.rotate_logs_task",
             "schedule": 86400.0,  # 24h
         },
+        "sync-meta-campaigns-daily": {
+            "task": "modules.ads_manager.tasks.sync_meta_campaigns_task",
+            "schedule": 86400.0,  # 24h
+        },
+        "run-ad-rules-hourly": {
+            "task": "modules.ads_manager.tasks.run_ad_rules_task",
+            "schedule": 3600.0,  # 1h
+        },
     },
 )
 
@@ -53,5 +61,6 @@ celery_app.conf.update(
 celery_app.autodiscover_tasks([
     "modules.video_engine",
     "modules.content_ai",
+    "modules.ads_manager",
     "core",
 ])
