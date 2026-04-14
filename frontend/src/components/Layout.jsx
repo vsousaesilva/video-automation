@@ -4,7 +4,6 @@ import useAuthStore from '../stores/authStore'
 import useDashboardStore from '../stores/dashboardStore'
 import BillingBanner from './BillingBanner'
 import ThemeToggle from './ThemeToggle'
-import LanguageSwitcher from './LanguageSwitcher'
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: DashboardIcon, end: true },
@@ -72,10 +71,9 @@ export default function Layout() {
           ))}
         </nav>
 
-        {/* Theme + Language */}
-        <div className="px-4 py-3 border-t border-gray-700 flex items-center justify-between gap-2 flex-shrink-0">
+        {/* Theme */}
+        <div className="px-4 py-3 border-t border-gray-700 flex items-center flex-shrink-0">
           <ThemeToggle />
-          <LanguageSwitcher />
         </div>
 
         {/* User section */}

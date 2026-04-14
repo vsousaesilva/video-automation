@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useT } from '../lib/i18n'
 import ThemeToggle from '../components/ThemeToggle'
-import LanguageSwitcher from '../components/LanguageSwitcher'
 
 const APP_URL = import.meta.env.VITE_APP_URL || 'https://app.usinadotempo.com.br'
 const DOCS_URL = import.meta.env.VITE_API_DOCS_URL || 'https://api.usinadotempo.com.br/docs'
@@ -43,7 +42,6 @@ function Nav({ t }) {
         <a href={DOCS_URL} target="_blank" rel="noreferrer" className="hover:text-slate-900 dark:hover:text-white">{t('landing.nav.docs')}</a>
       </nav>
       <div className="flex items-center gap-3">
-        <LanguageSwitcher />
         <ThemeToggle />
         <a href={`${APP_URL}/login`} className="hidden sm:inline-block text-sm font-medium text-slate-700 dark:text-slate-200 hover:underline">
           {t('landing.nav.login')}
