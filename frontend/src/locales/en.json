@@ -1,0 +1,160 @@
+{
+  "common": {
+    "login": "Log in",
+    "signup": "Sign up",
+    "logout": "Log out",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "confirm": "Confirm",
+    "back": "Back",
+    "language": "Language",
+    "theme_light": "Light theme",
+    "theme_dark": "Dark theme"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "negocios": "Businesses",
+    "content_ai": "Content AI",
+    "crm": "CRM",
+    "ads": "Ads",
+    "benchmark": "Benchmark",
+    "approvals": "Approvals",
+    "history": "History",
+    "media": "Library",
+    "settings": "Settings",
+    "billing": "Billing"
+  },
+  "landing": {
+    "nav": {
+      "features": "Features",
+      "pricing": "Pricing",
+      "docs": "API Docs",
+      "login": "Log in",
+      "cta": "Start free"
+    },
+    "hero": {
+      "tagline": "AI-powered digital marketing",
+      "title": "Your entire marketing operation in one place",
+      "subtitle": "Video Engine, Content AI, CRM, Ads Manager and competitor Benchmark. Automate the full digital marketing loop without switching tools.",
+      "cta_primary": "Create free account",
+      "cta_secondary": "Watch demo",
+      "trust": "No credit card. Cancel anytime."
+    },
+    "features": {
+      "title": "One platform, every module",
+      "subtitle": "Every module is designed to replace a tool you already pay for.",
+      "items": {
+        "video": {
+          "title": "Video Engine",
+          "description": "AI-generated vertical and horizontal videos (script + voice + cuts + music) from a brief."
+        },
+        "content": {
+          "title": "Content AI",
+          "description": "Captions, posts and campaign ideas with Gemini. One click to turn them into video."
+        },
+        "crm": {
+          "title": "CRM",
+          "description": "Visual pipeline, contacts, CSV import and integration with leads from your campaigns."
+        },
+        "ads": {
+          "title": "Ads Manager",
+          "description": "Manage Meta, Google and TikTok campaigns from a single panel. Automation rules and cross-platform insights."
+        },
+        "benchmark": {
+          "title": "Benchmark",
+          "description": "Track competitors and receive AI-generated reports of keywords, insights and opportunities."
+        },
+        "api": {
+          "title": "Public API",
+          "description": "Enterprise plans include a documented API to integrate Usina with BI, warehouses and internal systems."
+        }
+      }
+    },
+    "pricing": {
+      "title": "Simple pricing, predictable growth",
+      "subtitle": "Pick the plan that fits your stage.",
+      "monthly": "month",
+      "cta": "Get started",
+      "plans": {
+        "free": {
+          "name": "Free",
+          "price": "$0",
+          "tagline": "To try the platform",
+          "items": [
+            "1 business",
+            "5 videos/month",
+            "10 AI contents/month",
+            "Email support"
+          ]
+        },
+        "starter": {
+          "name": "Starter",
+          "price": "$19",
+          "tagline": "For small businesses",
+          "items": [
+            "3 businesses",
+            "30 videos/month",
+            "100 AI contents/month",
+            "2 benchmarks/month",
+            "CRM with 500 contacts",
+            "Chat support"
+          ]
+        },
+        "pro": {
+          "name": "Pro",
+          "price": "$59",
+          "tagline": "For agencies and scaling businesses",
+          "items": [
+            "10 businesses",
+            "200 videos/month",
+            "1000 AI contents/month",
+            "20 benchmarks/month",
+            "Ads Manager across 3 platforms",
+            "CRM with 5000 contacts"
+          ],
+          "highlight": "Most popular"
+        },
+        "enterprise": {
+          "name": "Enterprise",
+          "price": "Contact us",
+          "tagline": "High volume and integrations",
+          "items": [
+            "Unlimited businesses",
+            "Unlimited videos and content",
+            "Documented public API",
+            "SLA and dedicated support",
+            "Guided onboarding"
+          ]
+        }
+      }
+    },
+    "cta": {
+      "title": "Ready to replace 5 tools with one?",
+      "subtitle": "Create your free account and get going in under 5 minutes.",
+      "button": "Start now"
+    },
+    "footer": {
+      "product": "Product",
+      "company": "Company",
+      "legal": "Legal",
+      "terms": "Terms of use",
+      "privacy": "Privacy policy",
+      "contact": "Contact",
+      "copyright": "© {year} Usina do Tempo. All rights reserved."
+    }
+  },
+  "settings": {
+    "api_keys": {
+      "title": "API Keys",
+      "subtitle": "Create keys to access the public API (Enterprise plan).",
+      "create_button": "New key",
+      "no_keys": "No keys created yet.",
+      "raw_warning": "Store this key somewhere safe. It will not be shown again.",
+      "expires_never": "Never expires",
+      "revoke_confirm": "Revoke this key? Integrations using it will stop working."
+    }
+  }
+}

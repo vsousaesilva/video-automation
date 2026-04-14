@@ -20,7 +20,7 @@ from core.observability import (
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
-from routers import admin, auth, workspaces, users, billing, tasks, privacy, health
+from routers import admin, auth, workspaces, users, billing, tasks, privacy, health, api_v1
 from modules.video_engine.routers import (
     negocios,
     media,
@@ -115,6 +115,8 @@ app.include_router(crm_router.router)
 app.include_router(ads_manager_router.router)
 app.include_router(benchmark_router.router)
 app.include_router(health.router)
+app.include_router(api_v1.router)
+app.include_router(api_v1.admin_router)
 
 
 @app.get("/health")

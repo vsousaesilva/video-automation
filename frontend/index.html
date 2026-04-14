@@ -3,11 +3,49 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Video Automation Platform</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#4f46e5" />
+    <meta name="description" content="Usina do Tempo — marketing digital com IA. Video Engine, Content AI, CRM, Ads Manager e Benchmark em uma plataforma so." />
+
+    <!-- PWA manifest -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Usina" />
+
+    <!-- Aplicar tema antes do paint para evitar flash -->
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('usina.theme') || 'system';
+          var dark = saved === 'dark' || (saved === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (dark) document.documentElement.classList.add('dark');
+          document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+        } catch (_) {}
+      })();
+    </script>
+
+    <title>Usina do Tempo</title>
   </head>
-  <body class="bg-gray-50">
+  <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+
+    <!-- Crisp live chat (carregado apenas se VITE_CRISP_ID foi definido no build) -->
+    <script>
+      window.$crisp = [];
+      // @ts-ignore — injetado pelo Vite em build
+      window.CRISP_WEBSITE_ID = "__VITE_CRISP_ID__";
+      if (window.CRISP_WEBSITE_ID && window.CRISP_WEBSITE_ID !== "__VITE_CRISP_ID__" && window.CRISP_WEBSITE_ID.length > 0) {
+        (function () {
+          var d = document;
+          var s = d.createElement("script");
+          s.src = "https://client.crisp.chat/l.js";
+          s.async = 1;
+          d.getElementsByTagName("head")[0].appendChild(s);
+        })();
+      }
+    </script>
   </body>
 </html>

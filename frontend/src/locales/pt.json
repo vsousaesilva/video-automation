@@ -1,0 +1,160 @@
+{
+  "common": {
+    "login": "Entrar",
+    "signup": "Criar conta",
+    "logout": "Sair",
+    "loading": "Carregando...",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "delete": "Excluir",
+    "edit": "Editar",
+    "confirm": "Confirmar",
+    "back": "Voltar",
+    "language": "Idioma",
+    "theme_light": "Tema claro",
+    "theme_dark": "Tema escuro"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "negocios": "Negocios",
+    "content_ai": "Conteudo IA",
+    "crm": "CRM",
+    "ads": "Anuncios",
+    "benchmark": "Benchmark",
+    "approvals": "Aprovacoes",
+    "history": "Historico",
+    "media": "Biblioteca",
+    "settings": "Configuracoes",
+    "billing": "Assinatura"
+  },
+  "landing": {
+    "nav": {
+      "features": "Recursos",
+      "pricing": "Planos",
+      "docs": "Docs da API",
+      "login": "Entrar",
+      "cta": "Comecar gratis"
+    },
+    "hero": {
+      "tagline": "Marketing digital com IA",
+      "title": "Toda a sua operacao de marketing em um unico lugar",
+      "subtitle": "Video Engine, Content AI, CRM, Ads Manager e Benchmark de concorrentes. Automatize o ciclo completo de marketing digital sem trocar de ferramenta.",
+      "cta_primary": "Criar conta gratis",
+      "cta_secondary": "Ver demonstracao",
+      "trust": "Sem cartao de credito. Cancele quando quiser."
+    },
+    "features": {
+      "title": "Uma plataforma, todos os modulos",
+      "subtitle": "Cada modulo foi desenhado para substituir uma ferramenta que voce ja paga.",
+      "items": {
+        "video": {
+          "title": "Video Engine",
+          "description": "Gera videos verticais e horizontais com IA (roteiro + voz + cortes + musica) a partir de um briefing."
+        },
+        "content": {
+          "title": "Content AI",
+          "description": "Legendas, posts e ideias de campanha com Gemini. Um clique para transformar em video."
+        },
+        "crm": {
+          "title": "CRM",
+          "description": "Funil visual, contatos, import de CSV e integracao com os leads que vem das suas campanhas."
+        },
+        "ads": {
+          "title": "Ads Manager",
+          "description": "Gerencie campanhas Meta, Google e TikTok num unico painel. Regras de automacao e insights comparativos."
+        },
+        "benchmark": {
+          "title": "Benchmark",
+          "description": "Cadastre concorrentes e receba relatorios de keywords, insights e oportunidades gerados por IA."
+        },
+        "api": {
+          "title": "API publica",
+          "description": "Enterprise tem API documentada para integrar a Usina com BI, datawarehouse e sistemas internos."
+        }
+      }
+    },
+    "pricing": {
+      "title": "Planos simples, crescimento previsivel",
+      "subtitle": "Escolha o plano que faz sentido para o seu momento.",
+      "monthly": "mes",
+      "cta": "Comecar",
+      "plans": {
+        "free": {
+          "name": "Free",
+          "price": "R$ 0",
+          "tagline": "Para testar a plataforma",
+          "items": [
+            "1 negocio",
+            "5 videos/mes",
+            "10 conteudos IA/mes",
+            "Suporte por email"
+          ]
+        },
+        "starter": {
+          "name": "Starter",
+          "price": "R$ 97",
+          "tagline": "Para pequenos negocios",
+          "items": [
+            "3 negocios",
+            "30 videos/mes",
+            "100 conteudos IA/mes",
+            "2 benchmarks/mes",
+            "CRM com 500 contatos",
+            "Chat de suporte"
+          ]
+        },
+        "pro": {
+          "name": "Pro",
+          "price": "R$ 297",
+          "tagline": "Para agencias e negocios em escala",
+          "items": [
+            "10 negocios",
+            "200 videos/mes",
+            "1000 conteudos IA/mes",
+            "20 benchmarks/mes",
+            "Ads Manager 3 plataformas",
+            "CRM com 5000 contatos"
+          ],
+          "highlight": "Mais popular"
+        },
+        "enterprise": {
+          "name": "Enterprise",
+          "price": "Fale conosco",
+          "tagline": "Volume alto e integracoes",
+          "items": [
+            "Negocios ilimitados",
+            "Videos e conteudos ilimitados",
+            "API publica documentada",
+            "SLA e suporte dedicado",
+            "Onboarding assistido"
+          ]
+        }
+      }
+    },
+    "cta": {
+      "title": "Pronto para substituir 5 ferramentas por uma?",
+      "subtitle": "Crie sua conta gratuita e comece em menos de 5 minutos.",
+      "button": "Comecar agora"
+    },
+    "footer": {
+      "product": "Produto",
+      "company": "Empresa",
+      "legal": "Legal",
+      "terms": "Termos de uso",
+      "privacy": "Politica de privacidade",
+      "contact": "Contato",
+      "copyright": "© {year} Usina do Tempo. Todos os direitos reservados."
+    }
+  },
+  "settings": {
+    "api_keys": {
+      "title": "API Keys",
+      "subtitle": "Crie chaves para acessar a API publica (plano Enterprise).",
+      "create_button": "Nova chave",
+      "no_keys": "Nenhuma chave criada ainda.",
+      "raw_warning": "Guarde esta chave em local seguro. Ela nao sera exibida novamente.",
+      "expires_never": "Nunca expira",
+      "revoke_confirm": "Revogar esta chave? Integrations que a usam deixarao de funcionar."
+    }
+  }
+}

@@ -1051,6 +1051,59 @@ DEPOIS:
 
 ---
 
+### Sessão 12 — Landing page, i18n, dark mode, API pública, PWA
+
+**Objetivo:** Abrir a plataforma para o mercado — presença comercial (landing), suporte a múltiplos idiomas e temas, experiência PWA e API pública documentada para Enterprise.
+
+**Escopo:**
+
+**Backend:**
+1. Migration `017_api_keys.sql` — tabela `api_keys` (hash SHA-256, prefix visível, scopes `read|write`, RLS por workspace) + coluna `plans.api_publica` (Enterprise only)
+2. Router `routers/api_v1.py` com `/api/v1/*` (`/me`, `/negocios`, `/videos`, `/metrics/usage`) autenticado via `X-API-Key`
+3. Router administrativo `/api-keys` (CRUD via JWT da plataforma, criação retorna chave raw apenas uma vez)
+4. Audit log: `api_key_create`, `api_key_revoke`
+
+**Frontend:**
+1. Landing page em `/` quando `hostname === usinadotempo.com.br` — hero, features (6 módulos), pricing (Free/Starter/Pro/Enterprise), CTA, footer
+2. i18n **pt-BR / en / es** via store leve (sem `react-i18next`) — detecta navegador, persiste em localStorage
+3. Dark mode (light/dark/system) com Tailwind `dark:` classes, aplicado antes do primeiro paint (anti-flash)
+4. Chat in-app **Crisp** — script carregado condicionalmente via `VITE_CRISP_ID`
+5. PWA — `manifest.webmanifest`, `sw.js` (network-first com fallback de assets), ícones 192/512
+6. Componentes: `ThemeToggle`, `LanguageSwitcher`, `Landing` (com orbs de fundo, animações suaves)
+
+**Testes de finalização:**
+- [ ] `usinadotempo.com.br` serve landing; `app.usinadotempo.com.br` serve o app
+- [ ] Troca de idioma pt→en→es atualiza interface sem reload
+- [ ] Dark mode persiste entre sessões e respeita preferência do SO quando em `system`
+- [ ] `POST /api-keys` retorna raw key uma vez; chamada `/api/v1/me` autenticada funciona
+- [ ] Workspace não-Enterprise recebe 403 ao tentar criar API key
+- [ ] PWA instalável (Lighthouse score ≥ 90 em PWA)
+- [ ] Crisp aparece apenas quando `VITE_CRISP_ID` está definido
+
+**Critério de aceite:** Landing no ar, Enterprise pode gerar API keys funcionais, plataforma bilingue/trilingue com tema claro/escuro.
+
+**Estimativa:** 6-8 horas
+
+---
+
+### Sessão 13 — App nativo (React Native / Expo)
+
+**Objetivo:** App mobile nativo iOS + Android consumindo `api.usinadotempo.com.br` para complementar a PWA.
+
+**Escopo:**
+1. Repositório separado `usina-mobile` com Expo (React Native + TypeScript)
+2. Auth (login/signup) reusando endpoints da API pública
+3. Telas essenciais: Dashboard, Approvals (aprovar vídeos no celular), Notificações push
+4. Publicação: App Store + Google Play
+5. Integração com push notifications (Expo Notifications)
+6. Documentação do fluxo de review das lojas
+
+**Dependência:** Sessão 12 (API pública) + Sessão 11 (monitoramento estável).
+
+**Estimativa:** 15-20 horas
+
+---
+
 ## 8. Estratégia de Migração
 
 ### 8.1 Proteção do Video Engine durante a migração
@@ -1116,7 +1169,9 @@ except ImportError:
 | 9 | Ads Manager (Google + TikTok) | Sessão 8 | 6-8h |
 | 10 | Benchmark | Sessão 4 | 5-7h |
 | 11 | Monitoramento e polimento | Sessão 10 | 4-6h |
-| **Total** | | | **55-75h** |
+| 12 | Landing, i18n, dark mode, API pública, PWA | Sessão 11 | 6-8h |
+| 13 | App nativo (React Native / Expo) | Sessão 12 | 15-20h |
+| **Total** | | | **76-103h** |
 
 As Sessões 2 e 3 podem ser executadas em paralelo (sem dependência entre si). As Sessões 5-10 podem ser reordenadas conforme prioridade de negócio.
 
@@ -1150,16 +1205,20 @@ As Sessões 2 e 3 podem ser executadas em paralelo (sem dependência entre si). 
 
 ---
 
-## 12. Decisões em aberto (para revisão)
+## 12. Decisões tomadas (resolvidas em 2026-04-13)
 
-1. ~~**Domínio definitivo:**~~ **DEFINIDO** → `app.usinadotempo.com.br` (aplicação SaaS). API em `api.usinadotempo.com.br`.
-2. **Landing page:** Construir em `usinadotempo.com.br` (sem o `app.`) — mesmo frontend ou plataforma separada (Framer, Webflow)?
-3. **Suporte ao cliente:** Chat in-app (Intercom/Crisp) ou apenas email?
-4. **App mobile:** PWA é suficiente ou precisa de app nativo?
-5. **Idiomas:** Apenas pt-BR ou suporte a outros idiomas desde o início?
-6. **White-label:** Permitir que agências usem a plataforma com marca própria?
-7. **API pública:** Oferecer API para integrações de terceiros no plano Enterprise?
-8. **Marketplace:** Permitir que terceiros criem templates/integrações?
+| # | Tema | Decisão |
+|---|---|---|
+| 1 | Domínio da aplicação | `app.usinadotempo.com.br`; API em `api.usinadotempo.com.br` |
+| 2 | Landing page | `usinadotempo.com.br` (sem `app.`), **mesmo projeto Vite** com roteamento por hostname — não usa Framer/Webflow |
+| 3 | Suporte ao cliente | **Chat in-app (Crisp) + e-mail**; widget carregado condicionalmente via `VITE_CRISP_ID` |
+| 4 | App mobile | **PWA na Sessão 12** + **app nativo (React Native/Expo) na Sessão 13** consumindo `api.usinadotempo.com.br` |
+| 5 | Idiomas e tema | **pt-BR / en / es** desde o início, além de **modo claro e escuro** com persistência por usuário |
+| 6 | White-label | **Não será oferecido** — foco em marca única Usina do Tempo |
+| 7 | API pública | **Sim**, exclusivo Enterprise, autenticação via `X-API-Key` (tabela `api_keys`, hash SHA-256), documentação em `/docs` e guia publico |
+| 8 | Marketplace de templates/integrações | **Fora do escopo** por enquanto — reavaliar após atingir 200 workspaces ativos |
+
+Decisões anteriores (white-label, marketplace) removidas do PRD — não voltar a planejar sem realinhar com o usuário.
 
 ---
 

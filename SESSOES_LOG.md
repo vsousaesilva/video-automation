@@ -1019,4 +1019,102 @@
   - Documentar processo de restore de backup Supabase com teste real (runbook descreve o procedimento mas nao foi exercitado).
   - Validar run 48h sem intervencao manual (criterio de aceite do PRD).
 
-- **Proxima sessao:** — (encerramento da fase de implementacao do PRD; proximos passos sao operacionais: review de lojas de anuncios, cadastro de clientes iniciais, SLOs a partir das metricas coletadas).
+- **Proxima sessao:** Sessao 12 — Landing, i18n, dark mode, API publica, PWA (adicionada ao PRD apos respostas as 8 decisoes em aberto).
+
+---
+
+## Sessao 12 — Landing, i18n, dark mode, API publica, PWA
+- **Data:** 2026-04-13
+- **Status:** Concluida
+- **Contexto:** Respostas as 8 decisoes em aberto do PRD fecharam o escopo: landing no dominio raiz (mesmo projeto), Crisp + email, i18n + dark mode, API publica so Enterprise, PWA agora + nativo na Sessao 13. White-label e marketplace foram eliminados do escopo.
+- **O que foi feito:**
+
+  **Backend — API publica:**
+  - Migration `017_api_keys.sql`: tabela `api_keys` com `workspace_id`, `prefix`, `key_hash` (SHA-256), `scopes TEXT[] CHECK <@ ['read','write']`, `ativo`, `ultimo_uso_em`, `expira_em`. Indices unico em `key_hash`, por workspace e por prefix. RLS `api_keys_workspace_isolation`. ALTER `plans` add `api_publica BOOLEAN DEFAULT false`; `UPDATE WHERE slug='enterprise' SET api_publica=true`.
+  - `routers/api_v1.py` (novo):
+    - `generate_api_key()` gera `uks_live_<token_urlsafe(32)>` e devolve raw + prefix + hash (raw so exibida 1x).
+    - `require_api_key` depend. verifica header `X-API-Key`, valida hash, expira_em, checa subscription ativa com `plans.api_publica=true` e atualiza `ultimo_uso_em`.
+    - Endpoints publicos: `GET /api/v1/me`, `GET /api/v1/negocios`, `GET /api/v1/videos` (filtro opcional por `negocio_id`), `GET /api/v1/metrics/usage` (uso + limites do plano).
+    - Admin router `/api-keys` (JWT): `GET` lista, `POST` cria (retorna raw uma vez), `DELETE /{id}` revoga (soft via `ativo=false`).
+    - Guard `_ensure_enterprise` bloqueia criacao se plano nao tem `api_publica`.
+  - `main.py` inclui `api_v1.router` e `api_v1.admin_router`.
+  - `core/middleware.py` adiciona audit routes `api_key_create` / `api_key_revoke`.
+
+  **Frontend — i18n:**
+  - `lib/i18n.js` (novo): store zustand com `pt | en | es`; fallback `pt`; detecta `navigator.language`; `t(key, vars)` com interpolacao `{var}`; helper `useT()` para re-render reativo; atualiza `<html lang>`.
+  - Catalogos `locales/pt.json`, `en.json`, `es.json` cobrindo `common`, `nav`, landing completa (hero, features 6 modulos, pricing 4 planos, cta, footer) e `settings.api_keys`.
+  - `components/LanguageSwitcher.jsx` — pill com 3 botoes PT/EN/ES.
+
+  **Frontend — dark mode:**
+  - `stores/themeStore.js`: modes `light | dark | system`; aplica `.dark` em `<html>` e `color-scheme` antes do paint; escuta `prefers-color-scheme` quando em `system`; persiste em localStorage.
+  - `components/ThemeToggle.jsx` — botao icone sol/lua.
+  - `index.css` usa Tailwind v4 `@custom-variant dark (&:where(.dark, .dark *))` + overrides de bg/color do root.
+  - `index.html` script inline aplica classe `.dark` antes do React bootar (anti-flash).
+  - `Layout.jsx` recebe `<ThemeToggle />` + `<LanguageSwitcher />` no rodape da sidebar; `bg-gray-50 dark:bg-slate-900` no wrapper e `bg-gray-900 dark:bg-slate-950` na sidebar.
+
+  **Frontend — Landing page:**
+  - `pages/Landing.jsx` (novo, ~215 linhas): seccoes Nav (logo, links, lang/theme, login, CTA), Hero (tagline + titulo + subtitulo + 2 CTAs + trust), Features (grid 3x2 com gradientes por modulo), Pricing (4 planos, destaque Pro com ring indigo), CallToAction, Footer. Uso intensivo de gradientes, `backdrop-blur`, orbs de fundo com blur-3xl para efeito visual premium. Totalmente responsivo e traduzido.
+  - `App.jsx`: helper `isLandingHost()` detecta `usinadotempo.com.br` / `www.usinadotempo.com.br` (+ `?landing=1` para dev) e troca o arvore de rotas para renderizar apenas `<Landing />` no dominio raiz, mantendo todas as rotas SaaS exclusivamente em `app.usinadotempo.com.br`.
+  - Links externos da landing apontam para `VITE_APP_URL` (fallback `https://app.usinadotempo.com.br`) em signup/login.
+
+  **Frontend — Crisp chat:**
+  - `index.html` injeta snippet oficial do Crisp com placeholder textual `__VITE_CRISP_ID__` substituido em build via plugin customizado `usina-html-vars` no `vite.config.js`.
+  - Carga condicional: se `VITE_CRISP_ID` vazio, o snippet nao dispara.
+
+  **Frontend — PWA:**
+  - `public/manifest.webmanifest` com `name`, `short_name=Usina`, `display=standalone`, `theme_color=#4f46e5`, `background_color=#0f172a`, icones 192/512 (caminhos `/icons/icon-192.png`, `/icons/icon-512.png` — arte ainda a produzir).
+  - `public/sw.js` — service worker network-first; cache apenas `/assets/*` (hashed); ignora cross-origin, `/api/*`, `/auth/*`; fallback para `/` offline.
+  - `main.jsx` registra `sw.js` apenas em `import.meta.env.PROD`.
+  - `index.html` linka manifest, `apple-touch-icon`, `theme-color`, `viewport-fit=cover` para iOS.
+
+- **Decisoes tomadas:**
+  - i18n sem `react-i18next` para manter bundle enxuto (~15kb de deps economizados) — store zustand + JSON catalogs cobre 100% do necessario.
+  - Landing no mesmo projeto Vite, com roteamento por hostname, em vez de segundo build — deploy unico, mesma pipeline, zero duplicacao de dependencias. Trade-off: clientes que acessam `usinadotempo.com.br` baixam bundle maior que uma landing estatica; aceitavel pela simplicidade.
+  - Crisp (e nao Intercom): preco/plano free mais generoso e integracao igualmente simples; trocar no futuro eh uma alteracao de script.
+  - Dark mode com 3 estados (`light`, `dark`, `system`) — padrao moderno; evita decidir pelo usuario quando o SO ja opinou.
+  - API keys armazenam apenas `key_hash` (SHA-256); raw nunca persistida. Prefix (primeiros 12 chars) exibido na listagem para usuario reconhecer sem comprometer a chave.
+  - API publica v1 so leitura — mutacoes abertas (criar video via API etc.) ficam para v2 apos feedback real de Enterprise. Escopo `write` ja esta no CHECK do banco, pronto para uso futuro.
+  - PWA sem `vite-plugin-pwa` — SW escrito a mao, simples e auditavel. Evita mais uma dep + workbox.
+  - App nativo fica na Sessao 13 (repo separado com Expo) — nao cabe aqui; reaproveitaria a API publica criada agora.
+
+- **Arquivos criados/modificados:**
+  ```
+  Criados:
+  - backend/migrations/017_api_keys.sql
+  - backend/routers/api_v1.py
+  - frontend/src/lib/i18n.js
+  - frontend/src/locales/pt.json
+  - frontend/src/locales/en.json
+  - frontend/src/locales/es.json
+  - frontend/src/stores/themeStore.js
+  - frontend/src/components/ThemeToggle.jsx
+  - frontend/src/components/LanguageSwitcher.jsx
+  - frontend/src/pages/Landing.jsx
+  - frontend/public/manifest.webmanifest
+  - frontend/public/sw.js
+
+  Modificados:
+  - backend/main.py (include api_v1.router + admin_router)
+  - backend/core/middleware.py (audit api_key_*)
+  - frontend/index.html (manifest, theme-color, script anti-flash, Crisp snippet)
+  - frontend/vite.config.js (plugin usina-html-vars que substitui __VITE_CRISP_ID__)
+  - frontend/src/App.jsx (hostname routing -> Landing)
+  - frontend/src/main.jsx (import i18n + themeStore, register sw em prod)
+  - frontend/src/index.css (@custom-variant dark + overrides)
+  - frontend/src/components/Layout.jsx (ThemeToggle + LanguageSwitcher, classes dark:)
+  - PRD_USINA_DO_TEMPO.md (secao 12 virou "Decisoes tomadas"; Sessoes 12 e 13 adicionadas em Secao 7; cronograma atualizado)
+  ```
+
+- **Pendencias:**
+  - Executar migration 017 no Supabase
+  - Produzir icones 192x192 e 512x512 em `frontend/public/icons/` (placeholders no manifest — Lighthouse vai reclamar ate existirem)
+  - Criar conta Crisp, copiar `Website ID` e definir `VITE_CRISP_ID` no build do Vite
+  - Configurar DNS `usinadotempo.com.br` (raiz) apontando para o mesmo deploy do `app.*` (Cloudflare) para o hostname routing funcionar
+  - Criar pagina dedicada de documentacao da API publica (MDX ou markdown renderizado), alem do `/docs` automatico do FastAPI
+  - Construir UI de gerenciamento de API keys em `/settings/api-keys` (backend pronto; frontend ainda nao)
+  - Traduzir o restante das paginas do app (Dashboard, Benchmark, Ads, CRM, ContentAI) — por ora so landing, nav e keys estao em 3 linguas
+  - Testar Lighthouse PWA apos deploy com icones reais (meta >=90)
+  - Validar hostname routing em producao (tanto com www quanto sem)
+  - Iniciar Sessao 13 (app nativo) em repositorio separado
+
+- **Proxima sessao:** Sessao 13 — App nativo (React Native / Expo) consumindo a API publica criada nesta sessao.

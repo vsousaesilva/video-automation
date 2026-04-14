@@ -3,6 +3,8 @@ import { useEffect } from 'react'
 import useAuthStore from '../stores/authStore'
 import useDashboardStore from '../stores/dashboardStore'
 import BillingBanner from './BillingBanner'
+import ThemeToggle from './ThemeToggle'
+import LanguageSwitcher from './LanguageSwitcher'
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: DashboardIcon, end: true },
@@ -37,9 +39,9 @@ export default function Layout() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 dark:bg-slate-900">
       {/* Sidebar */}
-      <aside className="w-64 bg-gray-900 text-white flex flex-col">
+      <aside className="w-64 bg-gray-900 dark:bg-slate-950 text-white flex flex-col">
         <div className="p-6 border-b border-gray-700">
           <h1 className="text-lg font-bold tracking-tight">Usina do Tempo</h1>
           <p className="text-xs text-gray-400 mt-1">Plataforma de Marketing</p>
@@ -69,6 +71,12 @@ export default function Layout() {
             </NavLink>
           ))}
         </nav>
+
+        {/* Theme + Language */}
+        <div className="px-4 py-3 border-t border-gray-700 flex items-center justify-between gap-2">
+          <ThemeToggle />
+          <LanguageSwitcher />
+        </div>
 
         {/* User section */}
         <div className="p-4 border-t border-gray-700">

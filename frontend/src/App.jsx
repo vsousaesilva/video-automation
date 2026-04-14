@@ -21,11 +21,31 @@ import Funnel from './pages/Funnel'
 import Ads from './pages/Ads'
 import AdsOAuthCallback from './pages/AdsOAuthCallback'
 import Benchmark from './pages/Benchmark'
+import Landing from './pages/Landing'
 import TermosDeUso from './pages/TermosDeUso'
 import PoliticaPrivacidade from './pages/PoliticaPrivacidade'
 
+function isLandingHost() {
+  if (typeof window === 'undefined') return false
+  const host = window.location.hostname
+  // Forcar landing via ?landing=1 em qualquer ambiente (util em dev)
+  if (new URLSearchParams(window.location.search).has('landing')) return true
+  // Landing em usinadotempo.com.br / www.usinadotempo.com.br (sem `app.`)
+  return host === 'usinadotempo.com.br' || host === 'www.usinadotempo.com.br'
+}
+
 export default function App() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+
+  // Dominio raiz serve a landing page; app.* serve a aplicacao SaaS
+  if (isLandingHost()) {
+    return (
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    )
+  }
 
   return (
     <Routes>

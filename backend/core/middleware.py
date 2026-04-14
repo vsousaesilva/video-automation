@@ -86,6 +86,8 @@ AUDIT_ROUTES = {
     ("DELETE", "/benchmark/competitors"): "benchmark_delete_competitor",
     ("POST", "/benchmark/analyze"): "benchmark_analyze",
     ("DELETE", "/benchmark/reports"): "benchmark_delete_report",
+    ("POST", "/api-keys"): "api_key_create",
+    ("DELETE", "/api-keys"): "api_key_revoke",
 }
 
 

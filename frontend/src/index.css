@@ -1,1 +1,14 @@
 @import "tailwindcss";
+
+/* Tailwind v4: ativar dark mode baseado em classe .dark no <html> */
+@custom-variant dark (&:where(.dark, .dark *));
+
+html, body, #root {
+  height: 100%;
+  background-color: rgb(249 250 251);
+  color: rgb(15 23 42);
+}
+html.dark, html.dark body, html.dark #root {
+  background-color: rgb(15 23 42);
+  color: rgb(226 232 240);
+}
