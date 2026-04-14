@@ -48,3 +48,24 @@ html.dark .text-gray-600,
 html.dark .text-slate-600 {
   color: rgb(148 163 184) !important; /* slate-400 */
 }
+
+/* Cards brancos viram superfície escura ligeiramente acima do fundo.
+   Evita texto claro sobre fundo branco. */
+html.dark .bg-white {
+  background-color: #252E42 !important;
+}
+html.dark .border-gray-200,
+html.dark .border-slate-200 {
+  border-color: rgb(51 65 85) !important; /* slate-700 */
+}
+html.dark .border-gray-100,
+html.dark .border-slate-100 {
+  border-color: rgb(51 65 85) !important;
+}
+/* bg-gray-50/100 (zebra em tabelas, inputs) vira tom intermediário */
+html.dark .bg-gray-50,
+html.dark .bg-slate-50,
+html.dark .bg-gray-100,
+html.dark .bg-slate-100 {
+  background-color: #2B3550 !important;
+}
