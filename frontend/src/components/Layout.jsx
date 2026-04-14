@@ -41,13 +41,13 @@ export default function Layout() {
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-slate-900">
       {/* Sidebar */}
-      <aside className="w-64 bg-gray-900 dark:bg-slate-950 text-white flex flex-col">
-        <div className="p-6 border-b border-gray-700">
+      <aside className="w-64 bg-gray-900 dark:bg-slate-950 text-white flex flex-col h-screen">
+        <div className="p-6 border-b border-gray-700 flex-shrink-0">
           <h1 className="text-lg font-bold tracking-tight">Usina do Tempo</h1>
           <p className="text-xs text-gray-400 mt-1">Plataforma de Marketing</p>
         </div>
 
-        <nav className="flex-1 py-4">
+        <nav className="flex-1 py-4 overflow-y-auto min-h-0">
           {navItems.map((item) => (
             <NavLink
               key={item.to}
@@ -73,13 +73,13 @@ export default function Layout() {
         </nav>
 
         {/* Theme + Language */}
-        <div className="px-4 py-3 border-t border-gray-700 flex items-center justify-between gap-2">
+        <div className="px-4 py-3 border-t border-gray-700 flex items-center justify-between gap-2 flex-shrink-0">
           <ThemeToggle />
           <LanguageSwitcher />
         </div>
 
         {/* User section */}
-        <div className="p-4 border-t border-gray-700">
+        <div className="p-4 border-t border-gray-700 flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-sm font-bold">
               {user?.papel?.[0]?.toUpperCase() || 'U'}
