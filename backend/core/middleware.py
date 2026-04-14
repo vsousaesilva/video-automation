@@ -82,6 +82,10 @@ AUDIT_ROUTES = {
     ("POST", "/ads/rules"): "ads_create_rule",
     ("PUT", "/ads/rules"): "ads_update_rule",
     ("DELETE", "/ads/rules"): "ads_delete_rule",
+    ("POST", "/benchmark/competitors"): "benchmark_create_competitor",
+    ("DELETE", "/benchmark/competitors"): "benchmark_delete_competitor",
+    ("POST", "/benchmark/analyze"): "benchmark_analyze",
+    ("DELETE", "/benchmark/reports"): "benchmark_delete_report",
 }
 
 
@@ -165,6 +169,7 @@ BILLING_CHECKS = {
     ("POST", "/negocios"): ("_count_negocios", "max_negocios"),
     ("POST", "/content-ai/generate"): ("conteudos_gerados", "max_conteudos_mes"),
     ("POST", "/crm/contacts"): ("_count_contacts", "max_contatos_crm"),
+    ("POST", "/benchmark/analyze"): ("benchmarks_executados", "max_benchmarks_mes"),
 }
 
 

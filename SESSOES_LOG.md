@@ -845,3 +845,93 @@
   - Atualizar frontend Ads.jsx subtitle mencionando 3 plataformas (feito) + testar UI com dados reais
 
 - **Proxima sessao:** Sessao 10 — Benchmark
+
+---
+
+## Sessao 10 — Benchmark
+- **Data:** 2026-04-13
+- **Status:** Concluida
+- **O que foi feito:**
+
+  **Migration 015_benchmark.sql:**
+  - Tabelas: `competitors`, `benchmark_reports`, `benchmark_metrics`, `benchmark_keywords` com RLS por workspace
+  - ALTER `plans` add `max_benchmarks_mes` (free=0, starter=2, pro=20, enterprise=NULL ilimitado)
+  - ALTER `usage_metrics` add `benchmarks_executados`
+  - Indices em (workspace_id, ativo), (workspace_id, criado_em DESC), (report_id), (competitor_id, rede)
+
+  **Backend — modules/benchmark/ (novo):**
+  - `schemas.py` — CompetitorCreate/Update, BenchmarkAnalyzeRequest, ReportParams, enums RedeSocial/StatusReport
+  - `router.py` — CRUD de competitors + analyze + reports (9 endpoints):
+    - `GET/POST/PUT/DELETE /benchmark/competitors`
+    - `POST /benchmark/analyze` — cria relatorio e dispara Celery (fallback sincrono)
+    - `GET /benchmark/reports` — lista (campos basicos)
+    - `GET /benchmark/reports/{id}` — detalhe com join em competitors, metricas e keywords
+    - `DELETE /benchmark/reports/{id}`
+    - Helper `_ensure_benchmark_plan` — bloqueia Free e enforce limite via usage
+  - `services/analyzer.py` — `run_analysis(report_id)`:
+    - Carrega competitors validos do workspace
+    - Coleta metricas via `_metrics_stub` (hook para APIs reais; hoje grava handle/url em dados_extras)
+    - `analisar_keywords_com_ia` — Gemini 1.5 Flash, gera ate 20 keywords com relevancia, intencao, volume_estimado, competitor_associado
+    - `gerar_insights_com_ia` — Gemini retorna resumo + 5-8 insights (titulo, descricao, impacto alto/medio/baixo, categoria)
+    - Parser tolerante de JSON (`_extract_json` lida com fences markdown)
+    - Atualiza status do relatorio em cada fase + incrementa `benchmarks_executados` no usage
+  - `tasks.py` — `run_benchmark_analysis` (Celery shared_task, max_retries=1, acks_late)
+
+  **Backend — integracao plataforma:**
+  - `core/tasks.py` — autodiscover adicionado `modules.benchmark`
+  - `core/middleware.py` — audit log: benchmark_create_competitor, benchmark_delete_competitor, benchmark_analyze, benchmark_delete_report
+  - `core/middleware.py` — BILLING_CHECKS: `POST /benchmark/analyze` -> (benchmarks_executados, max_benchmarks_mes) (defesa em profundidade alem do check no router)
+  - `main.py` — import benchmark_router, include_router, versao 0.7.0 -> 0.8.0 (+ health endpoint)
+
+  **Frontend — Benchmark.jsx (novo):**
+  - 3 tabs: Concorrentes / Nova Analise / Relatorios
+  - Tab Concorrentes: grid de cards, modal para criar/editar (nome, segmento, website, 3 handles, descricao, palavras_chave CSV)
+  - Tab Nova Analise: form com nome do relatorio, checkbox de concorrentes, toggles de redes, toggles keywords/insights IA, contexto_negocio; submit POST /benchmark/analyze
+  - Tab Relatorios: tabela com status badge e acao Abrir/Remover
+  - ReportDetail: resumo executivo destacado (indigo), lista de insights coloridos por impacto, grid de metricas por concorrente, tabela de keywords com relevancia% + volume_estimado
+  - Tratamento de 403 exibindo mensagem do backend (plano insuficiente)
+
+  **Frontend — App.jsx + Layout.jsx:**
+  - Rota `/benchmark` adicionada
+  - Nav lateral: novo item "Benchmark" com icone `BenchmarkIcon` inline SVG
+
+- **Decisoes tomadas:**
+  - Coleta real de redes sociais deixada como stub (`_metrics_stub`) — APIs publicas do Instagram/YouTube/TikTok exigem OAuth/App Review; ficou como hook documentado. O mais valioso (keywords + insights) ja funciona via Gemini.
+  - Dispatcher de IA vs web scraping: optado por usar so Gemini (ja configurado) em vez de integrar terceiros (Semrush/Ahrefs); evita nova dependencia e custo
+  - JSON parser tolerante a fences markdown — Gemini as vezes envolve JSON em ```json ... ```
+  - Fallback sincrono se Celery indisponivel (evita deixar usuario preso com relatorio "pendente" em dev)
+  - Enforcement de limite em 2 camadas: `_ensure_benchmark_plan` no router (mensagem rica de upgrade) + BillingEnforcementMiddleware (defesa)
+  - `benchmarks_executados` somado apenas em sucesso (dentro do try do analyzer), nao no endpoint
+  - Versao bump 0.7.0 -> 0.8.0 marca entrega do modulo Benchmark
+
+- **Arquivos criados/modificados:**
+  ```
+  Criados:
+  - backend/migrations/015_benchmark.sql
+  - backend/modules/benchmark/__init__.py
+  - backend/modules/benchmark/schemas.py
+  - backend/modules/benchmark/router.py
+  - backend/modules/benchmark/tasks.py
+  - backend/modules/benchmark/services/__init__.py
+  - backend/modules/benchmark/services/analyzer.py
+  - frontend/src/pages/Benchmark.jsx
+
+  Modificados:
+  - backend/main.py (import + include + versao 0.8.0)
+  - backend/core/tasks.py (autodiscover modules.benchmark)
+  - backend/core/middleware.py (AUDIT_ROUTES benchmark_*; BILLING_CHECKS /benchmark/analyze)
+  - frontend/src/App.jsx (rota /benchmark)
+  - frontend/src/components/Layout.jsx (nav Benchmark + BenchmarkIcon)
+  ```
+
+- **Pendencias:**
+  - Executar migration 015 no Supabase
+  - Plugar integracoes reais com Instagram Graph API, YouTube Data API v3 e TikTok Display API em `_metrics_stub`
+  - Avaliar cache/persistencia de metricas coletadas para reduzir custo de API
+  - Opcional: agendar beat `modules.benchmark.tasks.refresh_reports_weekly` para refresh automatico de relatorios salvos
+  - Validar limite por plano funcionando (Free 403, Starter 2/mes, Pro 20/mes)
+  - Testar fluxo de ponta a ponta: cadastrar 2-3 concorrentes, rodar analise, abrir relatorio e conferir insights
+  - Testar fallback sincrono quando Redis/Celery indisponiveis
+  - Validar audit_log novos eventos (benchmark_analyze etc.)
+
+- **Proxima sessao:** Sessao 11 — Monitoramento, Observabilidade e Polimento

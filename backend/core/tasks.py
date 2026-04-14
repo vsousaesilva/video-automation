@@ -70,5 +70,6 @@ celery_app.autodiscover_tasks([
     "modules.video_engine",
     "modules.content_ai",
     "modules.ads_manager",
+    "modules.benchmark",
     "core",
 ])

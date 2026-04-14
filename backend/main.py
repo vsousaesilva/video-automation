@@ -30,6 +30,7 @@ from modules.dashboard import router as dashboard_router
 from modules.content_ai import router as content_ai_router
 from modules.crm import router as crm_router
 from modules.ads_manager import router as ads_manager_router
+from modules.benchmark import router as benchmark_router
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +51,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Usina do Tempo",
     description="Plataforma SaaS de automação de vídeos para marketing digital",
-    version="0.7.0",
+    version="0.8.0",
     lifespan=lifespan,
 )
 
@@ -102,11 +103,12 @@ app.include_router(dashboard_router.router)
 app.include_router(content_ai_router.router)
 app.include_router(crm_router.router)
 app.include_router(ads_manager_router.router)
+app.include_router(benchmark_router.router)
 
 
 @app.get("/health")
 async def health_check():
-    return {"status": "ok", "version": "0.7.0"}
+    return {"status": "ok", "version": "0.8.0"}
 
 
 @app.get("/debug/my-context")
