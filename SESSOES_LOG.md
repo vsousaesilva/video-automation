@@ -942,3 +942,81 @@
   - Motivacao: um mesmo workspace/cliente pode ter 2 ou mais negocios distintos, cada um com sua propria concorrencia — compartilhar concorrentes entre negocios vazaria contexto errado nos insights do Gemini
 
 - **Proxima sessao:** Sessao 11 — Monitoramento, Observabilidade e Polimento
+
+---
+
+## Sessao 11 — Monitoramento, Observabilidade e Polimento
+- **Data:** 2026-04-13
+- **Status:** Concluida
+- **O que foi feito:**
+
+  **Backend — observabilidade (novo `core/observability.py`):**
+  - `JsonFormatter` — structured logging em JSON para producao; inclui `correlation_id`, `level`, `logger`, `msg` e extras serializaveis. Em dev mantem formato legivel.
+  - `configure_logging()` — chamado em `main.py` na inicializacao; reduz verbosidade do `uvicorn.access` e anexa handler JSON quando `environment=production`.
+  - `init_sentry()` — inicializa `sentry-sdk[fastapi]` se `SENTRY_DSN` configurado; integra `FastApiIntegration`/`StarletteIntegration`; `send_default_pii=False`; sample de traces 10% em prod, 0% fora. No-op silencioso quando SDK ausente.
+  - `CorrelationIdMiddleware` — gera `X-Correlation-ID` (reusa o header enviado pelo cliente), propaga via `ContextVar` para ficar acessivel nos logs, devolve no header da resposta e registra `request_completed` com `method`, `path`, `status`, `duration_ms`.
+  - Context var `_correlation_id` + helpers `get_correlation_id()` / `set_correlation_id()`.
+
+  **Backend — health e metricas (novo `routers/health.py`):**
+  - `GET /health/detailed` — checa DB (Supabase), Redis (`ping`), Celery (`inspect().active()`), integracoes (apenas presenca de chaves: Gemini, Asaas, Telegram, Meta/Google/TikTok Ads, Sentry). Retorna `status=ok|degraded|error`; 503 quando DB falha.
+  - `GET /metrics` — contadores agregados (workspaces, users, negocios, subscriptions ativas, videos, conteudos, contacts, benchmark_reports). Protegido por header `X-Metrics-Token` quando `METRICS_TOKEN` esta configurado (senao fica publico).
+  - `uptime_seconds` e `check_duration_ms` no payload para diagnostico rapido.
+  - `GET /health` (liveness) mantido em `main.py`, agora usando `settings.app_version`.
+
+  **Backend — integracao plataforma:**
+  - `core/config.py` — novos settings: `app_version=0.9.0`, `sentry_dsn`, `metrics_token`.
+  - `main.py` — chama `configure_logging()` e `init_sentry()` no import, adiciona `CorrelationIdMiddleware` (entre Billing e CORS), inclui `health.router`, versao bump 0.8.0 → 0.9.0.
+  - `requirements.txt` — adiciona `sentry-sdk[fastapi]>=2.18.0`.
+
+  **Frontend — observabilidade e UX:**
+  - `components/ErrorBoundary.jsx` — class component captura erros de render, reporta para `window.Sentry.captureException` se disponivel, fallback visual com stack em dev, botoes "Tentar novamente" e "Recarregar pagina".
+  - `stores/toastStore.js` — zustand store de toasts (info/success/warning/error) com auto-dismiss e helper `toast.error()/success()/etc` para uso fora de componentes (ex.: interceptor axios).
+  - `components/ToastContainer.jsx` — UI dos toasts (canto inferior direito, stack vertical, cores por tipo, botao fechar).
+  - `components/Skeleton.jsx` — `Skeleton`, `SkeletonCard`, `SkeletonTable`, `SkeletonList` reutilizaveis com `animate-pulse`.
+  - `lib/sentry.js` — `initSentry()` carrega `@sentry/react` dinamicamente; silencioso se `VITE_SENTRY_DSN` ausente ou SDK nao instalado (nao quebra bundle).
+  - `main.jsx` — chama `initSentry()`, envolve `App` em `<ErrorBoundary>` e inclui `<ToastContainer />` dentro do BrowserRouter.
+  - `lib/api.js` — interceptor request injeta `X-Correlation-ID` (via `crypto.randomUUID`); interceptor response emite toasts automaticos para erros (sem conexao, 429 com mensagem do backend, 5xx) e reporta 5xx para Sentry; skip via `config.silent=true` para chamadas que preferem tratar manualmente.
+
+  **Documentacao:**
+  - `RUNBOOK.md` (novo, raiz do repo) — 7 secoes: endpoints de diagnostico, alertas/paineis, procedimentos de emergencia (backend down, videos travados, Asaas fora do ar, token IG expirado, LGPD), deploy/rollback, backup/restore Supabase, como rastrear por correlation id, contatos.
+
+- **Decisoes tomadas:**
+  - Sentry opcional em backend e frontend — init silencioso; nao requer DSN em dev. Evita travar ambiente local.
+  - Correlation ID gerado pelo cliente quando possivel (frontend) e reutilizado pelo backend — permite rastreio ponta a ponta de um erro relatado pelo usuario.
+  - `/metrics` sem Prometheus — endpoint JSON proprio basta para o estagio atual (poucos contadores). Migracao para `/metrics` Prometheus-style fica para quando tivermos cluster de observabilidade.
+  - Health `degraded` (em vez de `error`) quando Redis/Celery caem mas DB esta ok — reflete que o app ainda serve requisicoes sincronas enquanto as tarefas async ficam enfileiradas.
+  - Toast via zustand em vez de biblioteca externa (ex.: react-hot-toast) — dependencias ja padronizadas no projeto; +50 linhas vs +bundle de dependencia nova.
+  - Interceptor axios emite toasts por padrao; chamadas que preferem exibir erro inline passam `{ silent: true }` no config — pattern explicito e opt-out.
+  - Bump de versao 0.8.0 → 0.9.0 marca entrega do pilar de observabilidade.
+
+- **Arquivos criados/modificados:**
+  ```
+  Criados:
+  - backend/core/observability.py
+  - backend/routers/health.py
+  - frontend/src/components/ErrorBoundary.jsx
+  - frontend/src/components/ToastContainer.jsx
+  - frontend/src/components/Skeleton.jsx
+  - frontend/src/stores/toastStore.js
+  - frontend/src/lib/sentry.js
+  - RUNBOOK.md
+
+  Modificados:
+  - backend/main.py (imports observability, configure_logging, init_sentry, CorrelationIdMiddleware, include health.router, versao 0.9.0)
+  - backend/core/config.py (app_version, sentry_dsn, metrics_token)
+  - backend/requirements.txt (sentry-sdk[fastapi])
+  - frontend/src/main.jsx (ErrorBoundary + ToastContainer + initSentry)
+  - frontend/src/lib/api.js (X-Correlation-ID header + toasts de erro + Sentry capture)
+  ```
+
+- **Pendencias:**
+  - Criar projetos Sentry (backend e frontend) e popular `SENTRY_DSN` / `VITE_SENTRY_DSN` no Render e no build do Vite.
+  - Instalar `@sentry/react` no frontend apos configurar o DSN (mantido como dependencia opcional para nao inflar bundle sem DSN).
+  - Configurar `METRICS_TOKEN` em producao e apontar um uptime externo (BetterUptime/UptimeRobot) para `/health/detailed`.
+  - Aplicar `SkeletonCard`/`SkeletonTable` nas paginas Dashboard, Benchmark, Ads, CRM, ContentAI substituindo spinners atuais.
+  - Revisao mobile de todas as telas apos deploy desta sessao (nao testado ainda).
+  - Cloudflare DNS + CDN para o frontend (tarefa de infra fora do codigo).
+  - Documentar processo de restore de backup Supabase com teste real (runbook descreve o procedimento mas nao foi exercitado).
+  - Validar run 48h sem intervencao manual (criterio de aceite do PRD).
+
+- **Proxima sessao:** — (encerramento da fase de implementacao do PRD; proximos passos sao operacionais: review de lojas de anuncios, cadastro de clientes iniciais, SLOs a partir das metricas coletadas).

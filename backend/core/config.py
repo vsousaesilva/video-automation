@@ -62,6 +62,11 @@ class Settings(BaseSettings):
     environment: str = "development"
     base_url: str = "http://localhost:8000"
     log_level: str = "INFO"
+    app_version: str = "0.9.0"
+
+    # Observabilidade (Sessao 11)
+    sentry_dsn: str = ""
+    metrics_token: str = ""  # token simples para proteger /metrics
 
     model_config = {
         "env_file": ".env",

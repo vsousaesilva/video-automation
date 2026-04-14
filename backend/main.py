@@ -12,10 +12,15 @@ from core.middleware import (
     AuditLogMiddleware,
     BillingEnforcementMiddleware,
 )
+from core.observability import (
+    CorrelationIdMiddleware,
+    configure_logging,
+    init_sentry,
+)
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
-from routers import admin, auth, workspaces, users, billing, tasks, privacy
+from routers import admin, auth, workspaces, users, billing, tasks, privacy, health
 from modules.video_engine.routers import (
     negocios,
     media,
@@ -32,9 +37,11 @@ from modules.crm import router as crm_router
 from modules.ads_manager import router as ads_manager_router
 from modules.benchmark import router as benchmark_router
 
-logger = logging.getLogger(__name__)
-
 settings = get_settings()
+configure_logging()
+init_sentry()
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -51,7 +58,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Usina do Tempo",
     description="Plataforma SaaS de automação de vídeos para marketing digital",
-    version="0.8.0",
+    version=settings.app_version,
     lifespan=lifespan,
 )
 
@@ -75,6 +82,9 @@ if settings.frontend_url and settings.frontend_url not in allowed_origins:
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(AuditLogMiddleware)
 app.add_middleware(BillingEnforcementMiddleware)
+# CorrelationIdMiddleware adicionado por ultimo antes do CORS → executa cedo,
+# garantindo que o cid acompanhe os demais middlewares e handlers.
+app.add_middleware(CorrelationIdMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
@@ -104,11 +114,12 @@ app.include_router(content_ai_router.router)
 app.include_router(crm_router.router)
 app.include_router(ads_manager_router.router)
 app.include_router(benchmark_router.router)
+app.include_router(health.router)
 
 
 @app.get("/health")
 async def health_check():
-    return {"status": "ok", "version": "0.8.0"}
+    return {"status": "ok", "version": settings.app_version}
 
 
 @app.get("/debug/my-context")
