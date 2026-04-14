@@ -9,7 +9,10 @@ export async function initSentry() {
   if (!dsn) return false
 
   try {
-    const Sentry = await import('@sentry/react')
+    // Modulo nome em variavel + @vite-ignore para Rollup nao tentar resolver
+    // em build quando @sentry/react nao esta instalado.
+    const mod = '@sentry/react'
+    const Sentry = await import(/* @vite-ignore */ mod)
     Sentry.init({
       dsn,
       environment: import.meta.env.MODE,
